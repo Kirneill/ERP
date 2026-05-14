@@ -15,8 +15,8 @@ function createReadyClient(result?: Partial<DashboardLoadResult>) {
     })),
     runSampleImport: vi.fn(async (): Promise<ImportResult> => ({
       accepted: 2,
-      rejected: 2,
-      message: 'Import complete: 2 accepted, 2 rejected.'
+      rejected: 3,
+      message: 'Import complete: 2 accepted, 3 rejected.'
     }))
   };
 }
@@ -28,6 +28,10 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: /project health command center/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /run sample import/i })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /project health by score/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /audit log/i })).toBeInTheDocument();
+    expect(screen.getByText(/sample imports intentionally include rejected rows/i)).toBeInTheDocument();
+    expect(screen.getByText(/manual import/i)).toBeInTheDocument();
+    expect(screen.getByText(/time entry batch/i)).toBeInTheDocument();
     expect(screen.getAllByText(/north tower hospital expansion/i).length).toBeGreaterThan(0);
   });
 
@@ -46,6 +50,6 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: /run sample import/i }));
 
     expect(client.runSampleImport).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText(/import complete: 2 accepted, 2 rejected/i)).toBeInTheDocument();
+    expect(await screen.findByText(/import complete: 2 accepted, 3 rejected/i)).toBeInTheDocument();
   });
 });
