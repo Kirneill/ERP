@@ -30,6 +30,25 @@ public sealed class Project
     public List<TimeEntry> TimeEntries { get; set; } = [];
 }
 
+public sealed class ProjectHealthView
+{
+    public int ProjectId { get; set; }
+    public required string ProjectNumber { get; set; }
+    public required string Name { get; set; }
+    public required string ClientName { get; set; }
+    public required string MarketSector { get; set; }
+    public required string ProjectManager { get; set; }
+    public required string Status { get; set; }
+    public decimal ContractValue { get; set; }
+    public decimal CostToDate { get; set; }
+    public decimal EstimatedCostAtCompletion { get; set; }
+    public decimal BudgetUtilizationPercent { get; set; }
+    public int ScheduleVarianceDays { get; set; }
+    public decimal PercentComplete { get; set; }
+    public required string RiskStatus { get; set; }
+    public DateTime LastUpdatedUtc { get; set; }
+}
+
 public sealed class Employee
 {
     public int Id { get; set; }

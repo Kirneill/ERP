@@ -1,10 +1,14 @@
+using System.Text.Json.Serialization;
+
 namespace Erp.Api.Dtos;
+
+public sealed record ApiErrorResponseDto(ApiErrorDto Error);
 
 public sealed record ApiErrorDto(
     string Code,
     string Message,
-    string TraceId,
-    IReadOnlyDictionary<string, string[]>? Errors = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, string[]>? Details,
+    string TraceId);
 
 public sealed record ProjectHealthDto(
     int ProjectId,

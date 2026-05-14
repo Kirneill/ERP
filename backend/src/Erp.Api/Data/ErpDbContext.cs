@@ -13,6 +13,7 @@ public sealed class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbCon
     public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
     public DbSet<IntegrationError> IntegrationErrors => Set<IntegrationError>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ProjectHealthView> ProjectHealth => Set<ProjectHealthView>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,5 +28,16 @@ public sealed class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbCon
         modelBuilder.Entity<Project>().Property(project => project.PercentComplete).HasColumnType("decimal(5,2)");
         modelBuilder.Entity<ResourceAssignment>().Property(assignment => assignment.PlannedHours).HasColumnType("decimal(10,2)");
         modelBuilder.Entity<TimeEntry>().Property(entry => entry.Hours).HasColumnType("decimal(5,2)");
+
+        modelBuilder.Entity<ProjectHealthView>(view =>
+        {
+            view.HasNoKey();
+            view.ToView("vw_project_health");
+            view.Property(project => project.ContractValue).HasColumnType("decimal(18,2)");
+            view.Property(project => project.CostToDate).HasColumnType("decimal(18,2)");
+            view.Property(project => project.EstimatedCostAtCompletion).HasColumnType("decimal(18,2)");
+            view.Property(project => project.BudgetUtilizationPercent).HasColumnType("decimal(5,2)");
+            view.Property(project => project.PercentComplete).HasColumnType("decimal(5,2)");
+        });
     }
 }

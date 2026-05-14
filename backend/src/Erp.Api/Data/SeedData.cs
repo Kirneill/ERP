@@ -10,6 +10,7 @@ public static class SeedData
     public static async Task InitializeAsync(ErpDbContext db, CancellationToken cancellationToken = default)
     {
         await db.Database.EnsureCreatedAsync(cancellationToken);
+        await EnsureProjectHealthViewAsync(db, cancellationToken);
 
         if (await db.Projects.AnyAsync(cancellationToken))
         {
@@ -144,6 +145,42 @@ public static class SeedData
         await db.ResourceAssignments.AddRangeAsync(assignments, cancellationToken);
         await db.AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureProjectHealthViewAsync(ErpDbContext db, CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlRawAsync("DROP VIEW IF EXISTS vw_project_health;", cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            CREATE VIEW vw_project_health AS
+            SELECT
+                p.Id AS ProjectId,
+                p.ProjectNumber,
+                p.Name,
+                c.Name AS ClientName,
+                c.MarketSector,
+                p.ProjectManager,
+                p.Status,
+                p.ContractValue,
+                p.CostToDate,
+                p.EstimatedCostAtCompletion,
+                CASE
+                    WHEN p.ContractValue <= 0 THEN 100.0
+                    ELSE ROUND((p.EstimatedCostAtCompletion * 100.0) / p.ContractValue, 2)
+                END AS BudgetUtilizationPercent,
+                CAST(julianday(date(p.ForecastEndDate)) - julianday(date(p.PlannedEndDate)) AS INTEGER) AS ScheduleVarianceDays,
+                p.PercentComplete,
+                CASE
+                    WHEN p.ContractValue <= 0 OR p.EstimatedCostAtCompletion > p.ContractValue THEN 'RED'
+                    WHEN ((p.EstimatedCostAtCompletion * 100.0) / p.ContractValue) < 75 THEN 'GREEN'
+                    WHEN ((p.EstimatedCostAtCompletion * 100.0) / p.ContractValue) < 90 THEN 'YELLOW'
+                    ELSE 'RED'
+                END AS RiskStatus,
+                p.LastUpdatedUtc
+            FROM Projects p
+            INNER JOIN Clients c ON c.Id = p.ClientId;
+            """,
+            cancellationToken);
     }
 
     private static DateTime Utc(int year, int month, int day) => new(year, month, day, 0, 0, 0, DateTimeKind.Utc);

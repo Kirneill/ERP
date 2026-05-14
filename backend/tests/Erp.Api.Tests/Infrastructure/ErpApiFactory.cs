@@ -12,9 +12,11 @@ namespace Erp.Api.Tests.Infrastructure;
 public sealed class ErpApiFactory : WebApplicationFactory<Program>
 {
     private readonly DbConnection _connection;
+    private readonly Action<IServiceCollection>? _configureServices;
 
-    public ErpApiFactory()
+    public ErpApiFactory(Action<IServiceCollection>? configureServices = null)
     {
+        _configureServices = configureServices;
         _connection = new SqliteConnection("Data Source=:memory:");
         _connection.Open();
     }
@@ -26,6 +28,7 @@ public sealed class ErpApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<ErpDbContext>>();
             services.AddDbContext<ErpDbContext>(options => options.UseSqlite(_connection));
+            _configureServices?.Invoke(services);
         });
     }
 

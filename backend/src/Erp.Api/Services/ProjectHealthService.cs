@@ -6,6 +6,7 @@ namespace Erp.Api.Services;
 public interface IProjectHealthService
 {
     ProjectHealthDto Calculate(Project project);
+    ProjectHealthDto Calculate(ProjectHealthView project);
     string CalculateRiskStatus(decimal contractValue, decimal estimatedCostAtCompletion);
 }
 
@@ -45,6 +46,45 @@ public sealed class ProjectHealthService(ILogger<ProjectHealthService> logger) :
             scheduleVarianceDays,
             project.PercentComplete,
             riskStatus,
+            healthScore,
+            healthStatus,
+            project.LastUpdatedUtc);
+    }
+
+    public ProjectHealthDto Calculate(ProjectHealthView project)
+    {
+        var healthScore = CalculateHealthScore(
+            project.BudgetUtilizationPercent,
+            project.ScheduleVarianceDays,
+            project.EstimatedCostAtCompletion > project.ContractValue);
+        var healthStatus = CalculateHealthStatus(healthScore);
+
+        logger.LogInformation(
+            "Calculated project health from SQL view for {ProjectNumber}: contract {ContractValue}, estimate {EstimatedCostAtCompletion}, utilization {BudgetUtilizationPercent}, scheduleVarianceDays {ScheduleVarianceDays}, riskStatus {RiskStatus}, healthScore {HealthScore}, healthStatus {HealthStatus}",
+            project.ProjectNumber,
+            project.ContractValue,
+            project.EstimatedCostAtCompletion,
+            project.BudgetUtilizationPercent,
+            project.ScheduleVarianceDays,
+            project.RiskStatus,
+            healthScore,
+            healthStatus);
+
+        return new ProjectHealthDto(
+            project.ProjectId,
+            project.ProjectNumber,
+            project.Name,
+            project.ClientName,
+            project.MarketSector,
+            project.ProjectManager,
+            project.Status,
+            project.ContractValue,
+            project.CostToDate,
+            project.EstimatedCostAtCompletion,
+            project.BudgetUtilizationPercent,
+            project.ScheduleVarianceDays,
+            project.PercentComplete,
+            project.RiskStatus,
             healthScore,
             healthStatus,
             project.LastUpdatedUtc);

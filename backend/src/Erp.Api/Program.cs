@@ -6,8 +6,23 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+const string FrontendCorsPolicy = "FrontendCors";
+var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
 builder.Services.AddOpenApi();
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        if (corsAllowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsAllowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
 builder.Services.AddDbContext<ErpDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("ErpDb") ?? "Data Source=erp-demo.db"));
 builder.Services.AddScoped<IProjectHealthService, ProjectHealthService>();
@@ -35,10 +50,11 @@ app.UseExceptionHandler(exceptionApp =>
             traceId);
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        await context.Response.WriteAsJsonAsync(new ApiErrorDto(
+        await context.Response.WriteAsJsonAsync(new ApiErrorResponseDto(new ApiErrorDto(
             "UnhandledError",
             "An unexpected error occurred.",
-            traceId));
+            null,
+            traceId)));
     });
 });
 
@@ -57,10 +73,11 @@ app.Use(async (context, next) =>
         catch (BadHttpRequestException exception)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new ApiErrorDto(
+            await context.Response.WriteAsJsonAsync(new ApiErrorResponseDto(new ApiErrorDto(
                 "InvalidRequest",
                 exception.Message,
-                traceId));
+                null,
+                traceId)));
         }
         finally
         {
@@ -76,13 +93,14 @@ app.Use(async (context, next) =>
     }
 });
 
+app.UseCors(FrontendCorsPolicy);
+
 app.MapGet("/health", () => new HealthCheckDto("ok", "erp-api", DateTime.UtcNow));
 
 app.MapGet("/api/projects/health", async (ErpDbContext db, IProjectHealthService healthService, CancellationToken cancellationToken) =>
 {
-    var projects = await db.Projects
+    var projects = await db.ProjectHealth
         .AsNoTracking()
-        .Include(project => project.Client)
         .OrderBy(project => project.ProjectNumber)
         .ToListAsync(cancellationToken);
 
@@ -97,10 +115,11 @@ app.MapPost("/api/time-entries/import", async (
 {
     if (request is null)
     {
-        return Results.BadRequest(new ApiErrorDto(
+        return Results.BadRequest(new ApiErrorResponseDto(new ApiErrorDto(
             "InvalidRequest",
             "Request body is required.",
-            Activity.Current?.Id ?? context.TraceIdentifier));
+            null,
+            Activity.Current?.Id ?? context.TraceIdentifier)));
     }
 
     var response = await importService.ImportAsync(request, cancellationToken);

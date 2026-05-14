@@ -1,11 +1,16 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Erp.Api.Data;
 using Erp.Api.Dtos;
+using Erp.Api.Models;
+using Erp.Api.Services;
 using Erp.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Erp.Api.Tests;
 
@@ -29,6 +34,44 @@ public sealed class ApiIntegrationTests
         Assert.Contains(projects, project => project.ProjectNumber == "AEC-2026-002" && project.RiskStatus == "YELLOW");
         Assert.Contains(projects, project => project.ProjectNumber == "AEC-2026-003" && project.RiskStatus == "RED");
         Assert.Contains(projects, project => project.ProjectNumber == "AEC-2026-004" && project.RiskStatus == "RED");
+    }
+
+    [Fact]
+    public async Task ViteOrigin_GetRequest_IncludesCorsAllowOriginHeader()
+    {
+        using var factory = new ErpApiFactory();
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/health");
+        request.Headers.TryAddWithoutValidation("Origin", "http://localhost:5173");
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins));
+        Assert.Equal("http://localhost:5173", Assert.Single(origins));
+    }
+
+    [Fact]
+    public async Task ProjectHealthView_ExposesSqlReportingFields()
+    {
+        using var factory = new ErpApiFactory();
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ErpDbContext>();
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = """
+            SELECT ProjectNumber, ClientName, BudgetUtilizationPercent, RiskStatus
+            FROM vw_project_health
+            WHERE ProjectNumber = 'AEC-2026-002';
+            """;
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal("AEC-2026-002", reader.GetString(0));
+        Assert.Equal("Metro Health Authority", reader.GetString(1));
+        Assert.Equal(75m, Convert.ToDecimal(reader.GetValue(2), CultureInfo.InvariantCulture));
+        Assert.Equal("YELLOW", reader.GetString(3));
     }
 
     [Fact]
@@ -112,10 +155,51 @@ public sealed class ApiIntegrationTests
         var response = await client.PostAsync("/api/time-entries/import", null);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>(JsonOptions);
         Assert.NotNull(error);
-        Assert.Equal("InvalidRequest", error.Code);
-        Assert.False(string.IsNullOrWhiteSpace(error.TraceId));
+        Assert.Equal("InvalidRequest", error.Error.Code);
+        Assert.Equal("Request body is required.", error.Error.Message);
+        Assert.Null(error.Error.Details);
+        Assert.False(string.IsNullOrWhiteSpace(error.Error.TraceId));
+    }
+
+    [Fact]
+    public async Task TimeEntryImport_MalformedJson_ReturnsNestedApiError()
+    {
+        using var factory = new ErpApiFactory();
+        using var client = factory.CreateClient();
+        using var content = new StringContent("{", Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/api/time-entries/import", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>(JsonOptions);
+        Assert.NotNull(error);
+        Assert.Equal("InvalidRequest", error.Error.Code);
+        Assert.False(string.IsNullOrWhiteSpace(error.Error.Message));
+        Assert.Null(error.Error.Details);
+        Assert.False(string.IsNullOrWhiteSpace(error.Error.TraceId));
+    }
+
+    [Fact]
+    public async Task UnhandledException_ReturnsNestedApiError()
+    {
+        using var factory = new ErpApiFactory(services =>
+        {
+            services.RemoveAll<IProjectHealthService>();
+            services.AddScoped<IProjectHealthService, ThrowingProjectHealthService>();
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/projects/health");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>(JsonOptions);
+        Assert.NotNull(error);
+        Assert.Equal("UnhandledError", error.Error.Code);
+        Assert.Equal("An unexpected error occurred.", error.Error.Message);
+        Assert.Null(error.Error.Details);
+        Assert.False(string.IsNullOrWhiteSpace(error.Error.TraceId));
     }
 
     [Fact]
@@ -129,5 +213,14 @@ public sealed class ApiIntegrationTests
         Assert.NotNull(health);
         Assert.Equal("ok", health.Status);
         Assert.Equal("erp-api", health.Service);
+    }
+
+    private sealed class ThrowingProjectHealthService : IProjectHealthService
+    {
+        public ProjectHealthDto Calculate(Project project) => throw new InvalidOperationException("Test exception");
+
+        public ProjectHealthDto Calculate(ProjectHealthView project) => throw new InvalidOperationException("Test exception");
+
+        public string CalculateRiskStatus(decimal contractValue, decimal estimatedCostAtCompletion) => throw new InvalidOperationException("Test exception");
     }
 }
