@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createApiClient } from './api/client';
 import { Dashboard } from './components/Dashboard';
 import { ErrorState, LoadingState } from './components/StateBlocks';
-import type { DashboardLoadResult, ImportResult } from './types';
+import type { DashboardLoadResult, ImportResult, ResetResult } from './types';
 
 const defaultClient = createApiClient();
 
@@ -20,8 +20,11 @@ type LoadState =
 export function App({ client = defaultClient }: AppProps) {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
   const [isImporting, setIsImporting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | undefined>();
+  const [resetResult, setResetResult] = useState<ResetResult | undefined>();
   const [importError, setImportError] = useState<string | undefined>();
+  const [resetError, setResetError] = useState<string | undefined>();
 
   const loadDashboard = useCallback(async () => {
     setLoadState({ status: 'loading' });
@@ -43,7 +46,9 @@ export function App({ client = defaultClient }: AppProps) {
   const runImport = async () => {
     setIsImporting(true);
     setImportResult(undefined);
+    setResetResult(undefined);
     setImportError(undefined);
+    setResetError(undefined);
 
     try {
       const result = await client.runSampleImport();
@@ -55,6 +60,32 @@ export function App({ client = defaultClient }: AppProps) {
         : 'Sample import failed. Verify the backend API is running.');
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const resetDemoData = async () => {
+    setImportResult(undefined);
+    setResetResult(undefined);
+    setImportError(undefined);
+    setResetError(undefined);
+
+    if (loadState.status === 'ready' && loadState.result.isOffline) {
+      setResetError('Reset demo data requires the backend API. Start the API and try again.');
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const result = await client.resetDemoData();
+      setResetResult(result);
+      await loadDashboard();
+    } catch (error) {
+      setResetError(error instanceof Error
+        ? `Reset demo data failed: ${error.message}`
+        : 'Reset demo data failed. Verify the backend API is running.');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -75,9 +106,13 @@ export function App({ client = defaultClient }: AppProps) {
           offlineMessage={loadState.result.message}
           panelIssues={loadState.result.panelIssues}
           isImporting={isImporting}
+          isResetting={isResetting}
           importResult={importResult}
+          resetResult={resetResult}
           importError={importError}
+          resetError={resetError}
           onRunImport={runImport}
+          onResetDemoData={resetDemoData}
         />
       ) : null}
     </main>

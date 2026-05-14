@@ -235,4 +235,14 @@ describe('createApiClient', () => {
     });
     expect(secondResult).toEqual(firstResult);
   });
+
+  it('posts to the demo reset endpoint', async () => {
+    const fetchFn = vi.fn(async () => Response.json({ message: 'Demo data reset.' }));
+    const client = createApiClient({ baseUrl: 'http://localhost:5000', fetchFn });
+
+    const result = await client.resetDemoData();
+
+    expect(fetchFn).toHaveBeenCalledWith('http://localhost:5000/api/demo/reset', { method: 'POST' });
+    expect(result).toEqual({ message: 'Demo data reset.' });
+  });
 });

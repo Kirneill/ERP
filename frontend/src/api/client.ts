@@ -7,6 +7,7 @@ import type {
   HealthStatus,
   ImportResult,
   IntegrationError,
+  ResetResult,
   PanelLoadIssue,
   ProjectHealth
 } from '../types';
@@ -23,6 +24,7 @@ interface ApiClientOptions {
 interface ApiClient {
   loadDashboardData: () => Promise<DashboardLoadResult>;
   runSampleImport: () => Promise<ImportResult>;
+  resetDemoData: () => Promise<ResetResult>;
 }
 
 class ApiError extends Error {
@@ -146,6 +148,12 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       });
 
       return normalizeImportResult(response);
+    },
+
+    async resetDemoData() {
+      const response = await getJson(fetchFn, baseUrl, '/api/demo/reset', { method: 'POST' });
+
+      return normalizeResetResult(response);
     }
   };
 }
@@ -393,6 +401,14 @@ function normalizeImportResult(raw: unknown): ImportResult {
     rejected,
     message: readString(record, ['message', 'summary']) || `Import complete: ${accepted} accepted, ${rejected} rejected.`,
     correlationId: readString(record, ['correlationId', 'requestId']) || undefined
+  };
+}
+
+function normalizeResetResult(raw: unknown): ResetResult {
+  const record = asRecord(raw) ?? {};
+
+  return {
+    message: readString(record, ['message', 'summary']) || 'Demo data reset.'
   };
 }
 

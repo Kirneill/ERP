@@ -82,3 +82,7 @@ export interface ImportResult {
   message: string;
   correlationId?: string;
 }
+
+export interface ResetResult {
+  message: string;
+}
