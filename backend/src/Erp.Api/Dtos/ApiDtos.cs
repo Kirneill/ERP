@@ -87,4 +87,13 @@ public sealed record DashboardSummaryDto(
     decimal AverageHealthScore,
     int RecentIntegrationFailures);
 
+public sealed record DemoResetResponseDto(
+    DateTime ResetAtUtc,
+    int DeletedTimeEntries,
+    int DeletedImportBatches,
+    int DeletedIntegrationErrors,
+    int DeletedAuditLogs,
+    int RemainingProjects,
+    string Message);
+
 public sealed record HealthCheckDto(string Status, string Service, DateTime TimestampUtc);

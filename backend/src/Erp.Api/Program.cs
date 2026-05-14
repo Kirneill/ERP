@@ -126,6 +126,43 @@ app.MapPost("/api/time-entries/import", async (
     return Results.Ok(response);
 });
 
+app.MapPost("/api/demo/reset", async (ErpDbContext db, ILogger<Program> logger, CancellationToken cancellationToken) =>
+{
+    var resetAtUtc = DateTime.UtcNow;
+    logger.LogInformation("Starting demo reset at {ResetAtUtc}", resetAtUtc);
+
+    await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+    var deletedTimeEntries = await db.TimeEntries.ExecuteDeleteAsync(cancellationToken);
+    var deletedImportBatches = await db.ImportBatches.ExecuteDeleteAsync(cancellationToken);
+    var deletedIntegrationErrors = await db.IntegrationErrors.ExecuteDeleteAsync(cancellationToken);
+    var deletedAuditLogs = await db.AuditLogs.ExecuteDeleteAsync(cancellationToken);
+
+    db.AuditLogs.Add(SeedData.CreateSeedAuditLog());
+    await db.SaveChangesAsync(cancellationToken);
+
+    var remainingProjects = await db.Projects.CountAsync(cancellationToken);
+    await transaction.CommitAsync(cancellationToken);
+
+    logger.LogInformation(
+        "Completed demo reset at {ResetAtUtc}: deleted {DeletedTimeEntries} time entries, {DeletedImportBatches} import batches, {DeletedIntegrationErrors} integration errors, {DeletedAuditLogs} audit logs; {RemainingProjects} projects remain",
+        resetAtUtc,
+        deletedTimeEntries,
+        deletedImportBatches,
+        deletedIntegrationErrors,
+        deletedAuditLogs,
+        remainingProjects);
+
+    return Results.Ok(new DemoResetResponseDto(
+        resetAtUtc,
+        deletedTimeEntries,
+        deletedImportBatches,
+        deletedIntegrationErrors,
+        deletedAuditLogs,
+        remainingProjects,
+        "Demo mutable state reset and seed audit log restored."));
+});
+
 app.MapGet("/api/integration-errors/recent", async (ErpDbContext db, int? limit, CancellationToken cancellationToken) =>
 {
     var take = Math.Clamp(limit ?? 20, 1, 100);
