@@ -58,8 +58,9 @@ Interview-ready standalone HTML docs:
 
 - [`docs/interview-evidence-pack.html`](./docs/interview-evidence-pack.html): polished evidence pack for hiring-manager and Solutions Engineer discussion.
 - [`docs/architecture.html`](./docs/architecture.html): layered architecture, data flows, API table, database model, and tradeoffs.
+- [`docs/production-quality-build-spec.md`](./docs/production-quality-build-spec.md): future production build spec for turning the demo into a secure, observable AEC ERP integration platform.
 
-Open either file locally after cloning, or view it in a browser from the repo folder.
+Open these files locally after cloning, or view the HTML files in a browser from the repo folder.
 
 ## Backend responsibilities
 
