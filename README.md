@@ -54,6 +54,13 @@ React/Vite dashboard
 - **Persistence:** local SQLite database generated under the API project and reseeded when reset.
 - **Docs:** demo script and change note support interviewer explanation and rollback/reset talking points.
 
+Interview-ready standalone HTML docs:
+
+- [`docs/interview-evidence-pack.html`](./docs/interview-evidence-pack.html) — polished evidence pack for hiring-manager and Solutions Engineer discussion.
+- [`docs/architecture.html`](./docs/architecture.html) — layered architecture, data flows, API table, database model, and tradeoffs.
+
+Open either file locally after cloning, or view it in a browser from the repo folder.
+
 ## Backend responsibilities
 
 - Seed demo clients, projects, employees, and project-control records.
