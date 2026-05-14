@@ -1,0 +1,28 @@
+@Erp.Api_HostAddress = http://localhost:5000
+
+GET {{Erp.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{Erp.Api_HostAddress}}/api/projects/health
+Accept: application/json
+
+###
+
+POST {{Erp.Api_HostAddress}}/api/time-entries/import
+Content-Type: application/json
+
+{
+  "sourceSystem": "ManualImport",
+  "records": [
+    {
+      "projectNumber": "AEC-2026-001",
+      "employeeNumber": "EMP-1001",
+      "workDate": "2026-05-12",
+      "hours": 8,
+      "externalReference": "manual-001",
+      "description": "Demo time entry"
+    }
+  ]
+}
