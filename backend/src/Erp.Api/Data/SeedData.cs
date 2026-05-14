@@ -7,6 +7,17 @@ public static class SeedData
 {
     private static readonly DateTime Now = new(2026, 5, 13, 12, 0, 0, DateTimeKind.Utc);
 
+    public static AuditLog CreateSeedAuditLog() => new()
+    {
+        EntityType = "SeedData",
+        EntityId = "projects",
+        Action = "Seeded",
+        Actor = "system",
+        Message = "Deterministic AEC demo data seeded.",
+        OccurredAtUtc = Now,
+        Details = "5 projects, 5 employees"
+    };
+
     public static async Task InitializeAsync(ErpDbContext db, CancellationToken cancellationToken = default)
     {
         await db.Database.EnsureCreatedAsync(cancellationToken);
@@ -137,13 +148,10 @@ public static class SeedData
             new ResourceAssignment { ProjectId = project.Id, EmployeeId = employees[(index + 1) % employees.Length].Id, Role = "Project Engineer", PlannedHours = 480m, AssignedAtUtc = Now.AddDays(-30) }
         });
 
-        var auditLogs = new[]
-        {
-            new AuditLog { EntityType = "SeedData", EntityId = "projects", Action = "Seeded", Actor = "system", Message = "Deterministic AEC demo data seeded.", OccurredAtUtc = Now, Details = "5 projects, 5 employees" }
-        };
+        var auditLog = CreateSeedAuditLog();
 
         await db.ResourceAssignments.AddRangeAsync(assignments, cancellationToken);
-        await db.AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+        await db.AuditLogs.AddAsync(auditLog, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 

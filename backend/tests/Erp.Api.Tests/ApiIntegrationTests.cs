@@ -147,6 +147,63 @@ public sealed class ApiIntegrationTests
     }
 
     [Fact]
+    public async Task DemoReset_AfterImport_ClearsMutableStateAndRestoresSeedAuditLog()
+    {
+        using var factory = new ErpApiFactory();
+        using var client = factory.CreateClient();
+        var request = new TimeEntryImportRequest(
+            "ResetTestImport",
+            [
+                new TimeEntryImportRecord("AEC-2026-001", "EMP-1001", "2026-05-12", 8m, "UT-RESET-001", "Valid reset test row"),
+                new TimeEntryImportRecord("AEC-UNKNOWN", "EMP-1001", "2026-05-12", 8m, "UT-RESET-002", "Unknown project")
+            ]);
+
+        var importResponse = await client.PostAsJsonAsync("/api/time-entries/import", request, JsonOptions);
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ErpDbContext>();
+            Assert.True(await db.TimeEntries.AnyAsync(entry => entry.ExternalReference.StartsWith("UT-RESET-")));
+            Assert.True(await db.ImportBatches.AnyAsync(batch => batch.SourceSystem == "ResetTestImport"));
+            Assert.True(await db.IntegrationErrors.AnyAsync(error => error.SourceSystem == "ResetTestImport"));
+            Assert.True(await db.AuditLogs.CountAsync() > 1);
+        }
+
+        var resetResponse = await client.PostAsync("/api/demo/reset", null);
+
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
+        var reset = await resetResponse.Content.ReadFromJsonAsync<DemoResetResponseDto>(JsonOptions);
+        Assert.NotNull(reset);
+        Assert.NotEqual(default, reset.ResetAtUtc);
+        Assert.Equal(1, reset.DeletedTimeEntries);
+        Assert.Equal(1, reset.DeletedImportBatches);
+        Assert.Equal(1, reset.DeletedIntegrationErrors);
+        Assert.True(reset.DeletedAuditLogs > 1);
+        Assert.Equal(5, reset.RemainingProjects);
+        Assert.False(string.IsNullOrWhiteSpace(reset.Message));
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ErpDbContext>();
+            Assert.Equal(0, await db.TimeEntries.CountAsync());
+            Assert.Equal(0, await db.ImportBatches.CountAsync());
+            Assert.Equal(0, await db.IntegrationErrors.CountAsync());
+            Assert.Equal(5, await db.Projects.CountAsync());
+
+            var auditLog = await db.AuditLogs.SingleAsync();
+            Assert.Equal("SeedData", auditLog.EntityType);
+            Assert.Equal("projects", auditLog.EntityId);
+            Assert.Equal("Seeded", auditLog.Action);
+            Assert.Equal("system", auditLog.Actor);
+        }
+
+        var projects = await client.GetFromJsonAsync<List<ProjectHealthDto>>("/api/projects/health", JsonOptions);
+        Assert.NotNull(projects);
+        Assert.Equal(5, projects.Count);
+    }
+
+    [Fact]
     public async Task TimeEntryImport_NullBody_ReturnsConsistentApiError()
     {
         using var factory = new ErpApiFactory();
