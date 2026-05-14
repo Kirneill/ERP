@@ -36,51 +36,61 @@ class ApiError extends Error {
   }
 }
 
-const sampleImportPayload = {
-  sourceSystem: 'ManualImport',
-  records: [
-    {
-      projectNumber: 'AEC-2026-001',
-      employeeNumber: 'EMP-1001',
-      workDate: '2026-05-11',
-      hours: 7.5,
-      externalReference: 'sample-valid-001',
-      description: 'Project controls coordination'
-    },
-    {
-      projectNumber: 'AEC-2026-002',
-      employeeNumber: 'EMP-1002',
-      workDate: '2026-05-11',
-      hours: 6,
-      externalReference: 'sample-valid-002',
-      description: 'Field progress verification'
-    },
-    {
-      projectNumber: 'AEC-2026-003',
-      employeeNumber: 'EMP-1003',
-      workDate: '2026-05-11',
-      hours: -2,
-      externalReference: 'sample-invalid-negative-hours',
-      description: 'Invalid sample: negative hours should be rejected'
-    },
-    {
-      projectNumber: 'AEC-2026-004',
-      employeeNumber: 'EMP-1004',
-      workDate: '',
-      hours: 4,
-      externalReference: 'sample-invalid-missing-date',
-      description: 'Invalid sample: missing work date should be rejected'
-    },
-    {
-      projectNumber: 'AEC-2026-005',
-      employeeNumber: 'EMP-1005',
-      workDate: '2026-05-11',
-      hours: 25,
-      externalReference: 'sample-invalid-excess-hours',
-      description: 'Invalid sample: daily hours exceed the accepted range'
-    }
-  ]
-};
+const RECENT_PANEL_LIMIT = 6;
+
+interface SampleImportRecordTemplate {
+  projectNumber: string;
+  employeeNumber: string;
+  workDate: string;
+  hours: number;
+  externalReference: string;
+  description: string;
+}
+
+const sampleImportRecordTemplates: SampleImportRecordTemplate[] = [
+  {
+    projectNumber: 'AEC-2026-001',
+    employeeNumber: 'EMP-1001',
+    workDate: '2026-05-11',
+    hours: 7.5,
+    externalReference: 'sample-valid-001',
+    description: 'Project controls coordination'
+  },
+  {
+    projectNumber: 'AEC-2026-002',
+    employeeNumber: 'EMP-1002',
+    workDate: '2026-05-11',
+    hours: 6,
+    externalReference: 'sample-valid-002',
+    description: 'Field progress verification'
+  },
+  {
+    projectNumber: 'AEC-2026-003',
+    employeeNumber: 'EMP-1003',
+    workDate: '2026-05-11',
+    hours: -2,
+    externalReference: 'sample-invalid-negative-hours',
+    description: 'Invalid sample: negative hours should be rejected'
+  },
+  {
+    projectNumber: 'AEC-2026-004',
+    employeeNumber: 'EMP-1004',
+    workDate: '',
+    hours: 4,
+    externalReference: 'sample-invalid-missing-date',
+    description: 'Invalid sample: missing work date should be rejected'
+  },
+  {
+    projectNumber: 'AEC-2026-005',
+    employeeNumber: 'EMP-1005',
+    workDate: '2026-05-11',
+    hours: 25,
+    externalReference: 'sample-invalid-excess-hours',
+    description: 'Invalid sample: daily hours exceed the accepted range'
+  }
+];
+
+let sampleImportRunSequence = 0;
 
 export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl ?? getConfiguredBaseUrl());
@@ -90,8 +100,8 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     async loadDashboardData() {
       const [projectResult, integrationResult, auditResult] = await Promise.allSettled([
         getJson(fetchFn, baseUrl, '/api/projects/health'),
-        getJson(fetchFn, baseUrl, '/api/integration-errors/recent'),
-        getJson(fetchFn, baseUrl, '/api/audit-logs/recent')
+        getJson(fetchFn, baseUrl, `/api/integration-errors/recent?limit=${RECENT_PANEL_LIMIT}`),
+        getJson(fetchFn, baseUrl, `/api/audit-logs/recent?limit=${RECENT_PANEL_LIMIT}`)
       ]);
 
       if (projectResult.status === 'rejected') {
@@ -132,12 +142,32 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       const response = await getJson(fetchFn, baseUrl, '/api/time-entries/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sampleImportPayload)
+        body: JSON.stringify(buildSampleImportPayload())
       });
 
       return normalizeImportResult(response);
     }
   };
+}
+
+function buildSampleImportPayload() {
+  const runId = createSampleImportRunId();
+
+  return {
+    sourceSystem: 'ManualImport',
+    records: sampleImportRecordTemplates.map((record) => ({
+      ...record,
+      externalReference: `${record.externalReference}-${runId}`
+    }))
+  };
+}
+
+function createSampleImportRunId(): string {
+  sampleImportRunSequence = sampleImportRunSequence >= Number.MAX_SAFE_INTEGER ? 1 : sampleImportRunSequence + 1;
+  const timestamp = Date.now().toString(36);
+  const randomId = Math.random().toString(36).slice(2, 8) || '000000';
+
+  return `${timestamp}-${sampleImportRunSequence.toString(36)}-${randomId}`;
 }
 
 async function getJson(fetchFn: FetchLike, baseUrl: string, endpoint: string, init?: RequestInit): Promise<unknown> {

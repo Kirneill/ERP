@@ -1,6 +1,40 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createApiClient } from './client';
 
+interface SampleImportRecord extends Record<string, unknown> {
+  externalReference: string;
+}
+
+interface SampleImportPayload {
+  sourceSystem: string;
+  records: SampleImportRecord[];
+}
+
+const expectedSampleReferencePrefixes = [
+  'sample-valid-001-',
+  'sample-valid-002-',
+  'sample-invalid-negative-hours-',
+  'sample-invalid-missing-date-',
+  'sample-invalid-excess-hours-'
+];
+
+function readImportRequest(call: [RequestInfo | URL, RequestInit?]): SampleImportPayload {
+  const [url, init] = call;
+  expect(url).toBe('http://localhost:5000/api/time-entries/import');
+  expect(init?.method).toBe('POST');
+  expect(init?.headers).toEqual({ 'Content-Type': 'application/json' });
+  expect(typeof init?.body).toBe('string');
+  if (typeof init?.body !== 'string') {
+    throw new Error('Expected sample import request body to be serialized JSON.');
+  }
+
+  return JSON.parse(init.body) as SampleImportPayload;
+}
+
+function isBackendShapedImportRecord(record: SampleImportRecord): boolean {
+  return !('employeeId' in record) && !('employeeName' in record);
+}
+
 describe('createApiClient', () => {
   it('returns clearly marked mock fallback data when the backend is unavailable', async () => {
     const fetchFn = vi.fn(async () => {
@@ -113,6 +147,8 @@ describe('createApiClient', () => {
       hasExplicitRiskCounts: false,
       integrationFailureCount: undefined
     });
+    expect(fetchFn).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/integration-errors/recent?limit=6', undefined);
+    expect(fetchFn).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/audit-logs/recent?limit=6', undefined);
     expect(result.data.summary.criticalProjects).toBe(1);
     expect(result.data.integrationErrors[0]).toMatchObject({
       id: 'err-1',
@@ -125,26 +161,20 @@ describe('createApiClient', () => {
     });
   });
 
-  it('posts the backend-shaped sample import payload and normalizes accepted and rejected counts', async () => {
+  it('posts backend-shaped sample import payloads with unique references across runs', async () => {
     const fetchFn = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => (
       Response.json({ acceptedCount: 2, rejectedCount: 3, correlationId: 'corr-123' })
     ));
     const client = createApiClient({ baseUrl: 'http://localhost:5000', fetchFn });
 
-    const result = await client.runSampleImport();
+    const firstResult = await client.runSampleImport();
+    const secondResult = await client.runSampleImport();
 
-    expect(fetchFn).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchFn.mock.calls[0];
-    expect(url).toBe('http://localhost:5000/api/time-entries/import');
-    expect(init?.method).toBe('POST');
-    expect(init?.headers).toEqual({ 'Content-Type': 'application/json' });
-    expect(typeof init?.body).toBe('string');
-    if (typeof init?.body !== 'string') {
-      throw new Error('Expected sample import request body to be serialized JSON.');
-    }
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    const firstPayload = readImportRequest(fetchFn.mock.calls[0]);
+    const secondPayload = readImportRequest(fetchFn.mock.calls[1]);
 
-    const payload = JSON.parse(init.body);
-    expect(payload).toEqual({
+    expect(firstPayload).toMatchObject({
       sourceSystem: 'ManualImport',
       records: [
         {
@@ -152,7 +182,6 @@ describe('createApiClient', () => {
           employeeNumber: 'EMP-1001',
           workDate: '2026-05-11',
           hours: 7.5,
-          externalReference: 'sample-valid-001',
           description: 'Project controls coordination'
         },
         {
@@ -160,7 +189,6 @@ describe('createApiClient', () => {
           employeeNumber: 'EMP-1002',
           workDate: '2026-05-11',
           hours: 6,
-          externalReference: 'sample-valid-002',
           description: 'Field progress verification'
         },
         {
@@ -168,7 +196,6 @@ describe('createApiClient', () => {
           employeeNumber: 'EMP-1003',
           workDate: '2026-05-11',
           hours: -2,
-          externalReference: 'sample-invalid-negative-hours',
           description: 'Invalid sample: negative hours should be rejected'
         },
         {
@@ -176,7 +203,6 @@ describe('createApiClient', () => {
           employeeNumber: 'EMP-1004',
           workDate: '',
           hours: 4,
-          externalReference: 'sample-invalid-missing-date',
           description: 'Invalid sample: missing work date should be rejected'
         },
         {
@@ -184,17 +210,29 @@ describe('createApiClient', () => {
           employeeNumber: 'EMP-1005',
           workDate: '2026-05-11',
           hours: 25,
-          externalReference: 'sample-invalid-excess-hours',
           description: 'Invalid sample: daily hours exceed the accepted range'
         }
       ]
     });
-    expect(payload.records.every((record: Record<string, unknown>) => !('employeeId' in record) && !('employeeName' in record))).toBe(true);
-    expect(result).toEqual({
+
+    const firstReferences = firstPayload.records.map((record) => record.externalReference);
+    const secondReferences = secondPayload.records.map((record) => record.externalReference);
+    expect(firstReferences).toHaveLength(5);
+    expect(new Set(firstReferences).size).toBe(5);
+    expect(secondReferences).toHaveLength(5);
+    expect(new Set(secondReferences).size).toBe(5);
+    expect(firstReferences).not.toEqual(secondReferences);
+    expect(firstReferences.every((reference, index) => reference.startsWith(expectedSampleReferencePrefixes[index]))).toBe(true);
+    expect(secondReferences.every((reference, index) => reference.startsWith(expectedSampleReferencePrefixes[index]))).toBe(true);
+    expect([...firstReferences, ...secondReferences].every((reference) => /^[a-z0-9-]+$/.test(reference))).toBe(true);
+    expect(firstPayload.records.every(isBackendShapedImportRecord)).toBe(true);
+    expect(secondPayload.records.every(isBackendShapedImportRecord)).toBe(true);
+    expect(firstResult).toEqual({
       accepted: 2,
       rejected: 3,
       message: 'Import complete: 2 accepted, 3 rejected.',
       correlationId: 'corr-123'
     });
+    expect(secondResult).toEqual(firstResult);
   });
 });

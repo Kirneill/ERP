@@ -16,7 +16,7 @@ export function IntegrationErrorsPanel({ errors, issue }: { errors: IntegrationE
       {errors.length === 0 ? (
         <div className="panel-empty" role="status">No recent integration errors returned.</div>
       ) : (
-        <ul className="event-list">
+        <ul className="event-list event-list--bounded">
           {errors.map((error) => (
             <li key={error.id}>
               <div className="event-list__marker" aria-hidden="true" />
