@@ -1,0 +1,66 @@
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+.vs/
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+.yarn/
+
+# Frontend build outputs
+dist/
+build/
+.next/
+out/
+coverage-final.json
+
+# .NET publish/build outputs
+publish/
+artifacts/
+
+# SQLite and local databases
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets.json
+appsettings.Development.local.json
+appsettings.Production.local.json
+
+# Logs
+logs/
+*.log
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
