@@ -538,6 +538,26 @@ tfoot td {
   font-variant-numeric: tabular-nums;
 }
 
+.event-list--bounded {
+  max-height: 32rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.event-list--bounded::-webkit-scrollbar {
+  width: 6px;
+}
+
+.event-list--bounded::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.event-list--bounded::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
 .event-list li {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
