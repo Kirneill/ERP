@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture — AEC ERP Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0a0f;
+      --bg-soft: #0d0d14;
+      --surface-1: #13131a;
+      --surface-2: #1a1a24;
+      --surface-3: #242432;
+      --surface-hover: #1e1e2a;
+      --text-primary: #e8e8ec;
+      --text-secondary: #9898a8;
+      --text-tertiary: #707082;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.10);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --accent: #00bfa5;
+      --accent-soft: rgba(0, 191, 165, 0.12);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    ::selection { color: var(--text-primary); background: rgba(0, 191, 165, 0.28); }
+    html { background: var(--bg); scroll-behavior: smooth; overscroll-behavior: none; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--text-primary);
+      background:
+        radial-gradient(circle at 80% 0%, rgba(0, 191, 165, 0.10), transparent 30rem),
+        linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 46%);
+    }
+    body::-webkit-scrollbar { width: 6px; }
+    body::-webkit-scrollbar-track { background: transparent; }
+    body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: #28d8c0; }
+    a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(0, 191, 165, 0.82); border-radius: 6px; }
+    p, h1, h2, h3 { margin-top: 0; }
+    p { color: var(--text-secondary); line-height: 1.65; }
+    code { color: #bdf5ec; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.9em; }
+
+    .page { width: min(100% - 32px, 1180px); margin: 0 auto; padding: 40px 0 64px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 48px; color: var(--text-tertiary); font-size: 0.82rem; }
+    .nav-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px 18px; }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 32px; align-items: end; margin-bottom: 32px; }
+    .eyebrow { margin: 0 0 10px; color: var(--accent); font-size: 0.74rem; font-weight: 750; letter-spacing: 0.14em; line-height: 1.2; text-transform: uppercase; }
+    h1 { max-width: 840px; margin-bottom: 18px; color: var(--text-primary); font-size: clamp(2.4rem, 6vw, 4.9rem); font-weight: 650; letter-spacing: -0.065em; line-height: 0.98; }
+    h2 { margin-bottom: 12px; color: var(--text-primary); font-size: 1.22rem; font-weight: 650; letter-spacing: -0.02em; }
+    h3 { margin-bottom: 8px; color: var(--text-primary); font-size: 0.98rem; font-weight: 650; }
+    .hero-copy { max-width: 760px; margin-bottom: 0; font-size: 1.04rem; }
+
+    .hero-card, .section, .card, .layer, .decision {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--surface-1);
+    }
+    .hero-card::before, .section::before, .card::before, .layer::before, .decision::before {
+      position: absolute;
+      top: 0;
+      right: 18px;
+      left: 18px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+      content: "";
+    }
+    .hero-card { padding: 20px; background: var(--surface-2); }
+    .hero-card strong { display: block; margin-bottom: 8px; font-size: 1rem; }
+    .hero-card p { margin: 0; font-size: 0.9rem; }
+
+    .content { display: grid; gap: 20px; }
+    .section { padding: 24px; }
+    .section > p:last-child { margin-bottom: 0; }
+
+    .architecture-map {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .layer {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .layer-title { color: var(--text-primary); font-weight: 750; }
+    .layer-copy { color: var(--text-secondary); line-height: 1.5; }
+    .layer-chip { justify-self: end; padding: 5px 9px; border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); background: rgba(255, 255, 255, 0.035); font-size: 0.76rem; font-weight: 750; white-space: nowrap; }
+    .connector { display: grid; grid-template-columns: 220px minmax(0, 1fr) auto; gap: 16px; padding: 0 16px; color: var(--text-tertiary); font-size: 0.8rem; }
+    .connector span:nth-child(2) { position: relative; display: block; min-height: 18px; }
+    .connector span:nth-child(2)::before { position: absolute; top: 8px; right: 0; left: 0; height: 1px; background: linear-gradient(90deg, rgba(0, 191, 165, 0.18), rgba(0, 191, 165, 0.58), rgba(0, 191, 165, 0.18)); content: ""; }
+    .connector span:nth-child(2)::after { position: absolute; top: 4px; right: 0; width: 8px; height: 8px; border-top: 1px solid rgba(0, 191, 165, 0.72); border-right: 1px solid rgba(0, 191, 165, 0.72); transform: rotate(45deg); content: ""; }
+
+    .flow-grid, .db-grid, .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .db-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .decision-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card, .decision { padding: 16px; background: rgba(255, 255, 255, 0.025); }
+    .card strong, .decision strong { display: block; margin-bottom: 8px; color: var(--text-primary); }
+    .card p, .decision p { margin: 0; font-size: 0.9rem; line-height: 1.55; }
+    .flow-number { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 14px; border: 1px solid rgba(0, 191, 165, 0.30); border-radius: 999px; color: var(--accent); background: var(--accent-soft); font-variant-numeric: tabular-nums; font-weight: 750; }
+
+    .table-wrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; color: var(--text-secondary); font-size: 0.9rem; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--border-subtle); text-align: left; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: var(--text-tertiary); background: rgba(255, 255, 255, 0.025); font-size: 0.72rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+    td:first-child { color: var(--text-primary); font-weight: 650; white-space: nowrap; }
+
+    .schema-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .schema-list li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding-top: 10px; border-top: 1px solid var(--border-subtle); color: var(--text-secondary); line-height: 1.5; }
+    .schema-list strong { color: var(--text-primary); }
+
+    .footer { margin-top: 32px; color: var(--text-tertiary); font-size: 0.82rem; }
+
+    @media (max-width: 1080px) { .flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .decision-grid, .db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 880px) { .hero, .layer, .connector { grid-template-columns: 1fr; } .layer-chip { justify-self: start; } .connector { display: none; } }
+    @media (max-width: 640px) { .page { width: min(100% - 24px, 1180px); padding-top: 28px; } .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 32px; } .nav-links { justify-content: flex-start; } .section { padding: 18px; } .flow-grid, .decision-grid, .db-grid { grid-template-columns: 1fr; } .schema-list li { grid-template-columns: 1fr; } }
+
+    @media print {
+      :root { color-scheme: light; }
+      html, body { background: #f4f1ea; color: #181820; }
+      body { font-size: 11pt; }
+      .page { width: auto; padding: 0; }
+      .topbar { display: none; }
+      .hero, .flow-grid, .db-grid, .decision-grid { display: block; }
+      .hero-card, .section, .card, .layer, .decision { break-inside: avoid; margin-bottom: 12pt; border-color: #c7c2b8; background: #fbfaf6; }
+      .connector { display: none; }
+      h1, h2, h3, .card strong, .decision strong, .layer-title { color: #181820; }
+      p, li, td, .layer-copy { color: #343440; }
+      a { color: #047c70; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" aria-label="Document navigation">
+      <span>AEC ERP demo documentation</span>
+      <nav class="nav-links" aria-label="Related documents">
+        <a href="../README.md">README</a>
+        <a href="./interview-evidence-pack.html">Evidence pack</a>
+        <a href="./demo-script.md">Demo script</a>
+      </nav>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Architecture</p>
+        <h1 id="page-title">Architecture — AEC ERP Demo</h1>
+        <p class="hero-copy">A portable local stack that keeps the demo easy to clone while preserving the same boundaries a production ERP integration would use: UI, API client, Minimal API, services, EF Core, SQLite tables, and a reporting view.</p>
+      </div>
+      <aside class="hero-card">
+        <strong>Core path</strong>
+        <p>React dashboard → API client → ASP.NET Core Minimal API → services → EF Core → SQLite tables + <code>vw_project_health</code>.</p>
+      </aside>
+    </section>
+
+    <main class="content">
+      <section class="section" id="layered-architecture">
+        <h2>Visual layered architecture</h2>
+        <p>The diagram is hand-built HTML/CSS, so the file works locally without Mermaid scripts, external assets, or CDNs.</p>
+        <div class="architecture-map" role="img" aria-label="React dashboard to API client to ASP.NET Core Minimal API to services to EF Core to SQLite tables and vw_project_health">
+          <div class="layer"><span class="layer-title">React dashboard</span><span class="layer-copy">KPI cards, project health table, at-risk panel, recent integration errors, audit log, sample import, reset demo data.</span><span class="layer-chip">frontend/src</span></div>
+          <div class="connector"><span></span><span></span><span>fetch JSON</span></div>
+          <div class="layer"><span class="layer-title">API client</span><span class="layer-copy">Normalizes API responses, builds the five-row sample import payload, handles offline fallback, and reloads panels after mutation.</span><span class="layer-chip">client.ts</span></div>
+          <div class="connector"><span></span><span></span><span>HTTP endpoints</span></div>
+          <div class="layer"><span class="layer-title">ASP.NET Core Minimal API</span><span class="layer-copy">Maps health, dashboard summary, import, reset, integration-error, audit-log, OpenAPI, and health-check routes.</span><span class="layer-chip">Program.cs</span></div>
+          <div class="connector"><span></span><span></span><span>scoped services</span></div>
+          <div class="layer"><span class="layer-title">Services</span><span class="layer-copy">ProjectHealthService calculates score/status; TimeEntryImportService validates imports and writes entries, errors, and audit logs.</span><span class="layer-chip">Services</span></div>
+          <div class="connector"><span></span><span></span><span>LINQ + view mapping</span></div>
+          <div class="layer"><span class="layer-title">EF Core DbContext</span><span class="layer-copy">Maps entities, indexes, decimal columns, and keyless ProjectHealthView mapped to <code>vw_project_health</code>.</span><span class="layer-chip">ErpDbContext</span></div>
+          <div class="connector"><span></span><span></span><span>SQLite</span></div>
+          <div class="layer"><span class="layer-title">SQLite tables + <code>vw_project_health</code></span><span class="layer-copy">Seeded local database stores clients, projects, employees, resource assignments, time entries, import batches, integration errors, and audit logs.</span><span class="layer-chip">erp-demo.db</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="data-flows">
+        <h2>Data flow cards</h2>
+        <div class="flow-grid">
+          <article class="card"><span class="flow-number">1</span><strong>Dashboard load</strong><p>Frontend requests project health, recent integration errors, and recent audit logs. If the project-health request fails, the dashboard shows an explicit offline/demo fallback.</p></article>
+          <article class="card"><span class="flow-number">2</span><strong>Sample import</strong><p>User clicks Run sample import. The API client posts five ManualImport time-entry rows. The backend returns accepted and rejected counts.</p></article>
+          <article class="card"><span class="flow-number">3</span><strong>Validation failure</strong><p>Invalid rows are rejected for bad hours, missing work date, excessive daily hours, unknown project/employee, missing reference, duplicate reference, or null row.</p></article>
+          <article class="card"><span class="flow-number">4</span><strong>Audit traceability</strong><p>Accepted rows become time entries and audit logs. Rejected rows become integration errors and can be downloaded as an exception report CSV.</p></article>
+          <article class="card"><span class="flow-number">5</span><strong>Reset demo data</strong><p>The reset endpoint clears mutable import state and restores the deterministic seed audit log, keeping repeated interviews predictable.</p></article>
+        </div>
+      </section>
+
+      <section class="section" id="api-endpoints">
+        <h2>API endpoint table</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th><th>Interview evidence</th></tr></thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/health</code></td><td>Basic service health check.</td><td>Proves API is running.</td></tr>
+              <tr><td>GET</td><td><code>/openapi/v1.json</code></td><td>OpenAPI document in development.</td><td>Contract-driven discussion point.</td></tr>
+              <tr><td>GET</td><td><code>/api/projects/health</code></td><td>Returns seeded project health rows with calculated score/status.</td><td>Primary dashboard data source.</td></tr>
+              <tr><td>GET</td><td><code>/api/dashboard/summary</code></td><td>Returns project counts, health distribution, contract value, overrun, average health, and recent failures.</td><td>Executive KPI source.</td></tr>
+              <tr><td>POST</td><td><code>/api/time-entries/import</code></td><td>Imports sample time entries and returns accepted/rejected counts plus row errors.</td><td>Integration validation demo.</td></tr>
+              <tr><td>POST</td><td><code>/api/demo/reset</code></td><td>Resets mutable local demo data to a known interview state.</td><td>Repeatable demo reset.</td></tr>
+              <tr><td>GET</td><td><code>/api/integration-errors/recent?limit=20</code></td><td>Returns recent validation and integration errors.</td><td>Exception panel and CSV report.</td></tr>
+              <tr><td>GET</td><td><code>/api/audit-logs/recent?limit=20</code></td><td>Returns recent audit log entries.</td><td>Traceability panel.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="database-model">
+        <h2>Database model summary</h2>
+        <div class="db-grid">
+          <article class="card">
+            <strong>Project controls</strong>
+            <ul class="schema-list">
+              <li><strong>Clients</strong><span>Owner/client and market sector.</span></li>
+              <li><strong>Projects</strong><span>Project number, PM, status, contract value, cost to date, estimate at completion, dates, percent complete.</span></li>
+              <li><strong>ResourceAssignments</strong><span>Employee project roles and planned hours.</span></li>
+            </ul>
+          </article>
+          <article class="card">
+            <strong>Integration activity</strong>
+            <ul class="schema-list">
+              <li><strong>Employees</strong><span>Employee number, name, and email for import validation.</span></li>
+              <li><strong>TimeEntries</strong><span>Accepted external rows with unique external references.</span></li>
+              <li><strong>ImportBatches</strong><span>Source system, total rows, accepted count, rejected count, start and completion timestamps.</span></li>
+            </ul>
+          </article>
+          <article class="card">
+            <strong>Traceability/reporting</strong>
+            <ul class="schema-list">
+              <li><strong>IntegrationErrors</strong><span>Rejected import rows with context and details.</span></li>
+              <li><strong>AuditLogs</strong><span>Accepted imports, batch completion, and seed/reset evidence.</span></li>
+              <li><strong><code>vw_project_health</code></strong><span>SQL view for health reporting fields consumed through EF Core.</span></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="design-decisions">
+        <h2>Design decisions and tradeoffs</h2>
+        <div class="decision-grid">
+          <article class="decision"><strong>SQLite for portability</strong><p>SQLite keeps the demo cloneable and local, while EF Core preserves a production-like data access boundary. Production would move to managed storage with migrations, backup, and monitoring.</p></article>
+          <article class="decision"><strong>Local demo reset</strong><p><code>/api/demo/reset</code> intentionally clears mutable rows so interview runs stay predictable after imports, testing, or experimentation.</p></article>
+          <article class="decision"><strong>No auth because local-only</strong><p>Authentication and authorization are excluded to keep the interview slice focused. Production would need SSO, RBAC, tenant isolation, and audit retention controls.</p></article>
+          <article class="decision"><strong>Production next steps</strong><p>Add real connectors, background jobs, retry/dead-letter handling, observability, deployment automation, role workflows, and compliance-grade audit controls.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">Standalone local HTML. No external assets, fonts, scripts, or CDNs required.</footer>
+  </div>
+</body>
+</html>
