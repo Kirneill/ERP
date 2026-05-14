@@ -57,6 +57,26 @@ export function Dashboard({
               {isResetting ? 'Resetting…' : 'Reset demo data'}
             </button>
           </div>
+          <div className="hero-doc-links" aria-label="Interview documentation">
+            <a
+              className="secondary-button secondary-link-button"
+              href="/docs/architecture.html"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open architecture walkthrough in a new tab"
+            >
+              Open architecture walkthrough
+            </a>
+            <a
+              className="secondary-button secondary-link-button"
+              href="/docs/interview-evidence-pack.html"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open evidence pack in a new tab"
+            >
+              Open evidence pack
+            </a>
+          </div>
           <p>Posts mixed valid and invalid time entries to the API.</p>
         </div>
       </header>

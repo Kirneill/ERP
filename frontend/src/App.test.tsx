@@ -31,6 +31,17 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: /project health command center/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /run sample import/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reset demo data/i })).toBeInTheDocument();
+
+    const architectureLink = screen.getByRole('link', { name: /open architecture walkthrough/i });
+    const evidenceLink = screen.getByRole('link', { name: /open evidence pack/i });
+
+    expect(architectureLink).toHaveAttribute('href', '/docs/architecture.html');
+    expect(architectureLink).toHaveAttribute('target', '_blank');
+    expect(architectureLink).toHaveAttribute('rel', 'noreferrer');
+    expect(evidenceLink).toHaveAttribute('href', '/docs/interview-evidence-pack.html');
+    expect(evidenceLink).toHaveAttribute('target', '_blank');
+    expect(evidenceLink).toHaveAttribute('rel', 'noreferrer');
+
     expect(screen.getByText(/what this proves/i)).toBeInTheDocument();
     expect(screen.getByText(/integration validation/i)).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /project health by score/i })).toBeInTheDocument();
