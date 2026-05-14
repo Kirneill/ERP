@@ -54,7 +54,7 @@ export function ProjectHealthTable({ projects }: ProjectHealthTableProps) {
                 <td className="number-cell">{formatPercent(project.budgetVariancePercent)}</td>
                 <td>{formatDays(project.scheduleVarianceDays)}</td>
                 <td>{formatRiskCell(project)}</td>
-                <td className="number-cell">{project.integrationFailureCount ?? '—'}</td>
+                <td className="number-cell">{project.integrationFailureCount ?? 'N/A'}</td>
                 <td>
                   <span className="progress-label">{project.percentComplete}%</span>
                   <span className="progress-track" aria-hidden="true">

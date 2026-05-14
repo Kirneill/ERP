@@ -372,7 +372,7 @@ function formatIntegrationErrorMessage(details: string, projectNumber: string, e
     employeeNumber ? `Employee ${employeeNumber}` : ''
   ].filter(Boolean);
 
-  return context.length > 0 ? `${context.join(' · ')} — ${details}` : details;
+  return context.length > 0 ? `${context.join(' · ')}: ${details}` : details;
 }
 
 function normalizeAuditLogs(raw: unknown): AuditLogEntry[] {

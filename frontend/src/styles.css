@@ -147,11 +147,16 @@ h2 {
   min-width: 240px;
 }
 
-.hero-action-buttons {
+.hero-action-buttons,
+.hero-doc-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.hero-doc-links {
+  max-width: 360px;
 }
 
 .hero-actions p {
@@ -216,6 +221,16 @@ h2 {
   min-height: 36px;
   padding: 8px 12px;
   font-size: 0.8rem;
+}
+
+.secondary-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  text-decoration: none;
 }
 
 .offline-banner,
@@ -835,7 +850,8 @@ tfoot td {
     justify-items: start;
   }
 
-  .hero-action-buttons {
+  .hero-action-buttons,
+  .hero-doc-links {
     justify-content: flex-start;
   }
 

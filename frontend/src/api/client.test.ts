@@ -156,7 +156,7 @@ describe('createApiClient', () => {
       sourceSystem: 'Deltek',
       eventType: 'TimeEntryImport',
       status: 'Partial',
-      message: 'Project AEC-2026-001 · Employee EMP-1004 — Time entry import failed. Details: Work date is required.',
+      message: 'Project AEC-2026-001 · Employee EMP-1004: Time entry import failed. Details: Work date is required.',
       externalReference: 'sample-invalid-missing-date'
     });
   });

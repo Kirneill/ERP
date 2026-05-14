@@ -56,8 +56,8 @@ React/Vite dashboard
 
 Interview-ready standalone HTML docs:
 
-- [`docs/interview-evidence-pack.html`](./docs/interview-evidence-pack.html) — polished evidence pack for hiring-manager and Solutions Engineer discussion.
-- [`docs/architecture.html`](./docs/architecture.html) — layered architecture, data flows, API table, database model, and tradeoffs.
+- [`docs/interview-evidence-pack.html`](./docs/interview-evidence-pack.html): polished evidence pack for hiring-manager and Solutions Engineer discussion.
+- [`docs/architecture.html`](./docs/architecture.html): layered architecture, data flows, API table, database model, and tradeoffs.
 
 Open either file locally after cloning, or view it in a browser from the repo folder.
 
@@ -161,7 +161,7 @@ For this documentation-only update, no code build is required. Use the commands 
 
 ## 2-3 minute talk track
 
-> “This is a focused ERP-adjacent integration slice for AEC project operations, not a full ERP. I built it to show how a Solutions Engineer can translate a business pain point — disconnected project controls and integration errors — into a working demo.
+> “This is a focused ERP-adjacent integration slice for AEC project operations, not a full ERP. I built it to show how a Solutions Engineer can translate a business pain point, disconnected project controls and integration errors, into a working demo.
 >
 > The dashboard starts with executive KPIs: project count, health distribution, contract value, forecast overrun, and recent integration failures. Then I can drill into the project health table and explain how budget utilization, schedule variance, and risk status drive the Healthy, Watch, AtRisk, or Critical bands.
 >
