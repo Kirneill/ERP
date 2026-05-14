@@ -153,14 +153,14 @@
       </div>
       <aside class="hero-card">
         <strong>30-second setup</strong>
-        <p>I built a local AEC project controls slice with React/Vite, a .NET API, EF Core, SQLite, and a reporting view named <code>vw_project_health</code>.</p>
+        <p>The application is a local AEC project controls slice with React/Vite, a .NET API, EF Core, SQLite, and a reporting view named <code>vw_project_health</code>.</p>
       </aside>
     </section>
 
     <main class="content">
       <section class="section talk-track" id="opening-talk-track">
-        <h2>Candidate opening talk track</h2>
-        <p>I would start here: this is intentionally small, but it is not fake. The frontend is a React/Vite dashboard. The backend is an ASP.NET Core Minimal API. The database is SQLite through EF Core, with a SQL view called <code>vw_project_health</code>. The goal is to show how I turn project controls and integration quality into something an interviewer can inspect live.</p>
+        <h2>Project summary</h2>
+        <p>This is an intentionally small but working AEC project controls slice. The frontend is a React/Vite dashboard. The backend is an ASP.NET Core Minimal API. The database is SQLite through EF Core, with a SQL view called <code>vw_project_health</code>. The workflow turns project controls and integration quality into inspectable dashboard evidence.</p>
       </section>
 
       <section class="section" id="layered-architecture">
@@ -182,30 +182,30 @@
       </section>
 
       <section class="section" id="data-flow">
-        <h2>Live demo data flows</h2>
+        <h2>Dashboard data flows</h2>
         <div class="flow-grid">
           <article class="card"><span class="flow-number">1</span><strong>Dashboard load</strong><p>The dashboard requests project health, summary metrics, recent integration errors, and recent audit logs. If project health fails, it clearly labels demo/offline mode.</p></article>
-          <article class="card"><span class="flow-number">2</span><strong>Sample import</strong><p>The candidate clicks Run sample import. The client posts five ManualImport time-entry rows. The known result is 2 accepted and 3 rejected.</p></article>
+          <article class="card"><span class="flow-number">2</span><strong>Sample import</strong><p>The Run sample import action posts five ManualImport time-entry rows. The known result is 2 accepted and 3 rejected.</p></article>
           <article class="card"><span class="flow-number">3</span><strong>Validation boundary</strong><p>The API rejects bad hours, missing work dates, excessive daily hours, unknown project or employee references, missing references, duplicates, and null rows.</p></article>
-          <article class="card"><span class="flow-number">4</span><strong>Exception evidence</strong><p>Rejected rows become integration errors. The frontend can export those errors as an exception report CSV for interviewer review.</p></article>
-          <article class="card"><span class="flow-number">5</span><strong>Reset path</strong><p>The reset endpoint clears mutable import state and restores deterministic seed audit evidence, so the walkthrough can be repeated cleanly.</p></article>
+          <article class="card"><span class="flow-number">4</span><strong>Exception evidence</strong><p>Rejected rows become integration errors. The frontend can export those errors as an exception report CSV for technical review.</p></article>
+          <article class="card"><span class="flow-number">5</span><strong>Reset path</strong><p>The reset endpoint clears mutable import state and restores deterministic seed audit evidence, so the demo can be repeated cleanly.</p></article>
         </div>
       </section>
 
       <section class="section" id="api-endpoints">
-        <h2>API endpoints to point at during the interview</h2>
+        <h2>API endpoint summary</h2>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th><th>What I say live</th></tr></thead>
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th><th>Dashboard evidence</th></tr></thead>
             <tbody>
-              <tr><td>GET</td><td><code>/health</code></td><td>Basic service health check.</td><td>This proves the .NET API is running.</td></tr>
+              <tr><td>GET</td><td><code>/health</code></td><td>Basic service health check.</td><td>Confirms the .NET API is running.</td></tr>
               <tr><td>GET</td><td><code>/openapi/v1.json</code></td><td>OpenAPI document in development.</td><td>This makes the API contract inspectable.</td></tr>
               <tr><td>GET</td><td><code>/api/projects/health</code></td><td>Returns project health rows with calculated score and status.</td><td>This is the main dashboard data path.</td></tr>
               <tr><td>GET</td><td><code>/api/dashboard/summary</code></td><td>Returns project counts, health distribution, contract value, overrun, average health, and recent failures.</td><td>This feeds the executive KPI cards.</td></tr>
               <tr><td>POST</td><td><code>/api/time-entries/import</code></td><td>Imports sample time entries and returns accepted and rejected counts.</td><td>This is where integration quality is enforced.</td></tr>
-              <tr><td>POST</td><td><code>/api/demo/reset</code></td><td>Resets mutable demo data to a known state.</td><td>This keeps the interview repeatable.</td></tr>
+              <tr><td>POST</td><td><code>/api/demo/reset</code></td><td>Resets mutable demo data to a known state.</td><td>Restores a repeatable dashboard state.</td></tr>
               <tr><td>GET</td><td><code>/api/integration-errors/recent?limit=20</code></td><td>Returns recent validation and integration errors.</td><td>This drives the exception panel and CSV export.</td></tr>
-              <tr><td>GET</td><td><code>/api/audit-logs/recent?limit=20</code></td><td>Returns recent audit log entries.</td><td>This shows traceability for accepted imports and batch outcomes.</td></tr>
+              <tr><td>GET</td><td><code>/api/audit-logs/recent?limit=20</code></td><td>Returns recent audit log entries.</td><td>Provides traceability for accepted imports and batch outcomes.</td></tr>
             </tbody>
           </table>
         </div>
@@ -254,8 +254,8 @@
       <section class="section" id="tradeoffs">
         <h2>Design decisions and production tradeoffs</h2>
         <div class="decision-grid">
-          <article class="decision"><strong>SQLite for portability</strong><p>SQLite keeps the project cloneable for interviews. EF Core keeps the data boundary close to a production implementation.</p></article>
-          <article class="decision"><strong>Minimal API for focus</strong><p>The .NET API stays small and readable, which makes it easy to inspect routes, validation, service calls, and response shapes live.</p></article>
+          <article class="decision"><strong>SQLite for portability</strong><p>SQLite keeps the project cloneable for local review. EF Core keeps the data boundary close to a production implementation.</p></article>
+          <article class="decision"><strong>Minimal API for focus</strong><p>The .NET API stays small and readable, which keeps routes, validation, service calls, and response shapes easy to inspect.</p></article>
           <article class="decision"><strong>No auth in the demo</strong><p>The slice is local-only. Production would need SSO, RBAC, tenant isolation, secure audit retention, and environment controls.</p></article>
           <article class="decision"><strong>Production next steps</strong><p>Add real connectors, background jobs, retries, dead-letter workflows, observability, deployment automation, and compliance-grade audit controls.</p></article>
         </div>

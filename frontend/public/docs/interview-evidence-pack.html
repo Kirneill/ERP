@@ -152,15 +152,15 @@
       <div>
         <p class="eyebrow">Interview evidence pack</p>
         <h1 id="page-title">Interview Evidence Pack for the AEC ERP Demo</h1>
-        <p class="hero-copy">This page gives me a clean sequence: business problem, working implementation, validation behavior, audit evidence, test proof, and production tradeoffs.</p>
+        <p class="hero-copy">This evidence pack presents the business problem, working implementation, validation behavior, audit evidence, test proof, and production tradeoffs.</p>
       </div>
       <aside class="hero-card" aria-labelledby="proof-title">
-        <strong id="proof-title">What this proves</strong>
+        <strong id="proof-title">Evidence summary</strong>
         <ul>
-          <li>I translated an AEC project operations problem into a working ERP-adjacent slice.</li>
+          <li>The demo translates an AEC project operations problem into a working ERP-adjacent slice.</li>
           <li>The system enforces integration quality at the .NET API boundary.</li>
           <li>Accepted rows become audit evidence, rejected rows become visible exceptions.</li>
-          <li>The architecture is portable for interviews and honest about production gaps.</li>
+          <li>The architecture is portable for local review and explicit about production gaps.</li>
         </ul>
       </aside>
     </section>
@@ -176,7 +176,7 @@
       <main class="content">
         <section class="section" id="executive-summary">
           <h2>Executive summary</h2>
-          <p>I would frame the project like this: this is a focused ERP integration and project controls demo for AEC teams. It does not try to replace a full ERP. It shows how I connect project health, imported time entries, validation errors, audit history, and reporting evidence into one inspectable workflow.</p>
+          <p>This is a focused ERP integration and project controls demo for AEC teams. It does not try to replace a full ERP. It connects project health, imported time entries, validation errors, audit history, and reporting evidence into one inspectable workflow.</p>
           <div class="badge-row" aria-label="Technology evidence">
             <span class="badge success">.NET API</span>
             <span class="badge info">React/Vite</span>
@@ -189,8 +189,8 @@
           <h2>Business problem</h2>
           <p>AEC project leaders need one operational view that answers which projects need attention and why. Budget drift, schedule variance, and integration errors usually live in different places. This demo turns those signals into health bands, exception lists, and audit history.</p>
           <div class="two-col">
-            <div class="card"><strong>Interviewer prompt</strong><p>What would a project executive or project manager want to know in the first minute?</p></div>
-            <div class="card"><strong>Candidate answer</strong><p>I would show the health table, the at-risk panel, and the recent integration errors before I talk about implementation details.</p></div>
+            <div class="card"><strong>Business question</strong><p>Project executives and project managers need to know which projects need attention and why.</p></div>
+            <div class="card"><strong>Business-facing explanation</strong><p>The health table, at-risk panel, and recent integration errors surface operational risk before implementation details.</p></div>
           </div>
         </section>
 
@@ -209,11 +209,11 @@
             <table>
               <thead><tr><th>SE motion</th><th>Demo evidence</th><th>Why it matters</th></tr></thead>
               <tbody>
-                <tr><td>Discovery</td><td>The story starts with disconnected project controls and noisy integration failures.</td><td>It proves I can lead with business pain instead of tooling.</td></tr>
-                <tr><td>Demo narrative</td><td>The dashboard moves from portfolio health to exceptions to audit evidence.</td><td>It creates a clear path for a live walkthrough.</td></tr>
-                <tr><td>Integration credibility</td><td>The sample import posts mixed valid and invalid rows to <code>/api/time-entries/import</code>.</td><td>It shows real boundary validation and explainable failure handling.</td></tr>
-                <tr><td>Technical proof</td><td>The stack includes .NET API routes, EF Core mappings, SQLite tables, OpenAPI, and <code>vw_project_health</code>.</td><td>Technical interviewers can inspect the implementation instead of trusting screenshots.</td></tr>
-                <tr><td>Scope judgment</td><td>The roadmap names auth, RBAC, real connectors, monitoring, deployment, and stronger audit controls.</td><td>It shows I know what belongs in production and what was intentionally excluded.</td></tr>
+                <tr><td>Discovery</td><td>The story starts with disconnected project controls and noisy integration failures.</td><td>The workflow leads with business pain instead of tooling.</td></tr>
+                <tr><td>Demo narrative</td><td>The dashboard moves from portfolio health to exceptions to audit evidence.</td><td>The sequence provides a clear review path from business signal to technical evidence.</td></tr>
+                <tr><td>Integration credibility</td><td>The sample import posts mixed valid and invalid rows to <code>/api/time-entries/import</code>.</td><td>The import boundary demonstrates real validation and explainable failure handling.</td></tr>
+                <tr><td>Technical proof</td><td>The stack includes .NET API routes, EF Core mappings, SQLite tables, OpenAPI, and <code>vw_project_health</code>.</td><td>The implementation can be inspected directly instead of relying on screenshots.</td></tr>
+                <tr><td>Scope judgment</td><td>The roadmap names auth, RBAC, real connectors, monitoring, deployment, and stronger audit controls.</td><td>The roadmap separates production requirements from intentionally excluded demo scope.</td></tr>
               </tbody>
             </table>
           </div>
@@ -241,7 +241,7 @@
 
         <section class="section" id="sql-evidence">
           <h2>SQL implementation evidence</h2>
-          <p>Project health is exposed through a reporting-style SQLite view named <code>vw_project_health</code>, mapped by EF Core as a keyless view. This is the strongest database talking point for ERP reporting, BI, and integration discussions.</p>
+          <p>Project health is exposed through a reporting-style SQLite view named <code>vw_project_health</code>, mapped by EF Core as a keyless view. The view provides database-level evidence for ERP reporting, BI, and integration discussions.</p>
           <pre><code>CREATE VIEW vw_project_health AS
 SELECT
   p.Id AS ProjectId,
@@ -268,7 +268,7 @@ INNER JOIN Clients c ON c.Id = p.ClientId;</code></pre>
           <div class="three-col">
             <div class="card"><strong>Backend tests 16/16</strong><p>xUnit tests cover API behavior, project health scoring, SQL view fields, import validation, error persistence, audit persistence, CORS, dashboard summary, and reset behavior.</p></div>
             <div class="card"><strong>Frontend tests 13/13</strong><p>Vitest tests cover dashboard states, import feedback, reset handling, API normalization, health badges, bounded errors, CSV exception report download, and the documentation links.</p></div>
-            <div class="card"><strong>Reset endpoint</strong><p><code>/api/demo/reset</code> clears mutable time entries, import batches, integration errors, and audit logs, then restores seed audit evidence for repeatable interviews.</p></div>
+            <div class="card"><strong>Reset endpoint</strong><p><code>/api/demo/reset</code> clears mutable time entries, import batches, integration errors, and audit logs, then restores seed audit evidence for repeatable local review.</p></div>
           </div>
         </section>
 
@@ -284,8 +284,8 @@ INNER JOIN Clients c ON c.Id = p.ClientId;</code></pre>
         </section>
 
         <section class="quote-card" id="talk-track">
-          <h2>60-second talk track</h2>
-          <p>This is a focused ERP-adjacent integration slice for AEC project operations. It shows how I translate disconnected project controls and integration errors into a working demo. The React/Vite dashboard calls a .NET Minimal API backed by SQLite and EF Core. Project health comes from the <code>vw_project_health</code> SQL view and service scoring. The sample import sends five time-entry rows: two are accepted and three are rejected. Accepted rows create audit logs, rejected rows become visible integration errors, and those errors can be downloaded as an exception report CSV. A reset endpoint returns the local demo to a known state. For production, I would add auth, RBAC, real connectors, monitoring, stronger audit controls, and deployment automation.</p>
+          <h2>60-second project summary</h2>
+          <p>This is a focused ERP-adjacent integration slice for AEC project operations. It translates disconnected project controls and integration errors into a working dashboard. The React/Vite frontend calls a .NET Minimal API backed by SQLite and EF Core. Project health comes from the <code>vw_project_health</code> SQL view and service scoring. The sample import sends five time-entry rows: two are accepted and three are rejected. Accepted rows create audit logs, rejected rows become visible integration errors, and those errors can be downloaded as an exception report CSV. A reset endpoint returns the local demo to a known state. Production hardening would add auth, RBAC, real connectors, monitoring, stronger audit controls, and deployment automation.</p>
         </section>
       </main>
 
