@@ -21,6 +21,8 @@ public sealed record ProjectHealthDto(
     int ScheduleVarianceDays,
     decimal PercentComplete,
     string RiskStatus,
+    int HealthScore,
+    string HealthStatus,
     DateTime LastUpdatedUtc);
 
 public sealed record TimeEntryImportRequest(
@@ -72,12 +74,13 @@ public sealed record AuditLogDto(
 
 public sealed record DashboardSummaryDto(
     int TotalProjects,
-    int GreenProjects,
-    int YellowProjects,
-    int RedProjects,
+    int HealthyProjects,
+    int WatchProjects,
+    int AtRiskProjects,
+    int CriticalProjects,
     decimal TotalContractValue,
     decimal TotalForecastOverrun,
-    decimal AverageBudgetUtilizationPercent,
-    int RecentIntegrationErrors);
+    decimal AverageHealthScore,
+    int RecentIntegrationFailures);
 
 public sealed record HealthCheckDto(string Status, string Service, DateTime TimestampUtc);

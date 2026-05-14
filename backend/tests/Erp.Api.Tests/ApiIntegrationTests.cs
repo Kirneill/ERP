@@ -32,6 +32,23 @@ public sealed class ApiIntegrationTests
     }
 
     [Fact]
+    public async Task DashboardSummary_ReturnsHealthCountsAndFinancialRollups()
+    {
+        using var factory = new ErpApiFactory();
+        using var client = factory.CreateClient();
+
+        var summary = await client.GetFromJsonAsync<DashboardSummaryDto>("/api/dashboard/summary", JsonOptions);
+
+        Assert.NotNull(summary);
+        Assert.Equal(5, summary.TotalProjects);
+        Assert.Equal(153_000_000m, summary.TotalContractValue);
+        Assert.Equal(1_100_000m, summary.TotalForecastOverrun);
+        Assert.True(summary.AverageHealthScore > 0);
+        Assert.Equal(0, summary.RecentIntegrationFailures);
+        Assert.Equal(5, summary.HealthyProjects + summary.WatchProjects + summary.AtRiskProjects + summary.CriticalProjects);
+    }
+
+    [Fact]
     public async Task TimeEntryImport_MixedRows_AcceptsValidRowsAndPersistsErrorsAndAuditLogs()
     {
         using var factory = new ErpApiFactory();

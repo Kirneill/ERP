@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Erp.Api.Data;
 using Erp.Api.Dtos;
 using Erp.Api.Services;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,8 +25,14 @@ app.UseExceptionHandler(exceptionApp =>
     exceptionApp.Run(async context =>
     {
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
+        var exception = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
         var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("UnhandledException");
-        logger.LogError("Unhandled API exception for trace {TraceId}", traceId);
+        logger.LogError(
+            exception,
+            "Unhandled API exception {ExceptionType}: {ExceptionMessage} for trace {TraceId}",
+            exception?.GetType().Name ?? "UnknownException",
+            exception?.Message ?? "No exception message available.",
+            traceId);
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         await context.Response.WriteAsJsonAsync(new ApiErrorDto(
@@ -158,12 +165,13 @@ app.MapGet("/api/dashboard/summary", async (ErpDbContext db, IProjectHealthServi
 
     var summary = new DashboardSummaryDto(
         projects.Count,
-        health.Count(project => project.RiskStatus == "GREEN"),
-        health.Count(project => project.RiskStatus == "YELLOW"),
-        health.Count(project => project.RiskStatus == "RED"),
+        health.Count(project => project.HealthStatus == "Healthy"),
+        health.Count(project => project.HealthStatus == "Watch"),
+        health.Count(project => project.HealthStatus == "AtRisk"),
+        health.Count(project => project.HealthStatus == "Critical"),
         projects.Sum(project => project.ContractValue),
         projects.Sum(project => Math.Max(0m, project.EstimatedCostAtCompletion - project.ContractValue)),
-        health.Count == 0 ? 0 : decimal.Round(health.Average(project => project.BudgetUtilizationPercent), 2, MidpointRounding.AwayFromZero),
+        health.Count == 0 ? 0 : decimal.Round((decimal)health.Average(project => project.HealthScore), 2, MidpointRounding.AwayFromZero),
         recentErrors);
 
     return Results.Ok(summary);
