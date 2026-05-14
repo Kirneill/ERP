@@ -147,6 +147,13 @@ h2 {
   min-width: 240px;
 }
 
+.hero-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .hero-actions p {
   max-width: 260px;
   margin: 0;
@@ -203,6 +210,12 @@ h2 {
   color: var(--text-primary);
   background: var(--surface-hover);
   border-color: var(--border-strong);
+}
+
+.secondary-button--compact {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
 }
 
 .offline-banner,
@@ -306,6 +319,55 @@ h2 {
   font-weight: 650;
   letter-spacing: -0.06em;
   line-height: 1;
+}
+
+.proof-panel {
+  margin-bottom: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.proof-panel summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.proof-panel summary::marker {
+  color: var(--text-tertiary);
+}
+
+.proof-panel summary small {
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.proof-grid p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.proof-grid strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
 }
 
 .dashboard-grid {
@@ -773,8 +835,16 @@ tfoot td {
     justify-items: start;
   }
 
+  .hero-action-buttons {
+    justify-content: flex-start;
+  }
+
   .hero-actions p {
     text-align: left;
+  }
+
+  .proof-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .panel--wide {
@@ -801,7 +871,13 @@ tfoot td {
   }
 
   .risk-list dl,
-  .skeleton-grid {
+  .skeleton-grid,
+  .proof-grid {
     grid-template-columns: 1fr;
+  }
+
+  .proof-panel summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

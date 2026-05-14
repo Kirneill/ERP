@@ -92,16 +92,26 @@ React/Vite dashboard
 - **Integration error logging:** rejected import rows are stored with source system, operation, severity, message, external reference, project number, employee number, timestamp, and details.
 - **Audit logging:** accepted time entries and completed import batches are stored with actor, action, entity type/id, message, timestamp, and details.
 
-## API endpoint summary
+## OpenAPI and API docs
+
+When the backend is running, use `http://localhost:5000/openapi/v1.json` as the source-of-truth OpenAPI document. In an interview, show it briefly to prove the demo is contract-driven, then focus the conversation on the operational flow instead of reading every schema.
+
+Endpoint summary:
 
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/health` | Basic service health check. |
+| `GET` | `/openapi/v1.json` | OpenAPI document for endpoint discovery and client/testing discussion. |
 | `GET` | `/api/projects/health` | Returns seeded project health rows with calculated score/status. |
 | `GET` | `/api/dashboard/summary` | Returns project counts, health distribution, contract value, overrun, average health, and recent failure count. |
 | `POST` | `/api/time-entries/import` | Imports sample time entries; returns accepted/rejected counts and row errors. |
+| `POST` | `/api/demo/reset` | Resets the local demo database to seeded data for a clean interview run. |
 | `GET` | `/api/integration-errors/recent?limit=20` | Returns recent validation/integration errors. |
 | `GET` | `/api/audit-logs/recent?limit=20` | Returns recent audit log entries for traceability. |
+
+Use **Run sample import** to demonstrate validation: the frontend posts mixed valid/invalid time-entry rows to `/api/time-entries/import`, then reloads health, exceptions, and audit panels. Use **Reset demo data** before a second run or after experimenting so the story returns to a known seed state.
+
+For the SQL/database talking point: the persistence layer is intentionally local SQLite through EF Core. Project health is exposed through the `vw_project_health` SQL view, which is the right artifact to discuss when an interviewer asks how the dashboard could map to reporting, BI, or ERP database views in production.
 
 ## Run locally
 

@@ -1,4 +1,4 @@
-import type { DashboardData, ImportResult, PanelLoadIssue } from '../types';
+import type { DashboardData, ImportResult, PanelLoadIssue, ResetResult } from '../types';
 import { AtRiskPanel } from './AtRiskPanel';
 import { AuditLogPanel } from './AuditLogPanel';
 import { IntegrationErrorsPanel } from './IntegrationErrorsPanel';
@@ -11,9 +11,13 @@ interface DashboardProps {
   offlineMessage?: string;
   panelIssues: PanelLoadIssue[];
   isImporting: boolean;
+  isResetting: boolean;
   importResult?: ImportResult;
+  resetResult?: ResetResult;
   importError?: string;
+  resetError?: string;
   onRunImport: () => void;
+  onResetDemoData: () => void;
 }
 
 export function Dashboard({
@@ -22,9 +26,13 @@ export function Dashboard({
   offlineMessage,
   panelIssues,
   isImporting,
+  isResetting,
   importResult,
+  resetResult,
   importError,
-  onRunImport
+  resetError,
+  onRunImport,
+  onResetDemoData
 }: DashboardProps) {
   const integrationIssue = panelIssues.find((issue) => issue.panel === 'integration-errors')?.message;
   const auditIssue = panelIssues.find((issue) => issue.panel === 'audit-logs')?.message;
@@ -41,9 +49,14 @@ export function Dashboard({
           </p>
         </div>
         <div className="hero-actions">
-          <button className="primary-button" type="button" onClick={onRunImport} disabled={isImporting}>
-            {isImporting ? 'Running import…' : 'Run sample import'}
-          </button>
+          <div className="hero-action-buttons">
+            <button className="primary-button" type="button" onClick={onRunImport} disabled={isImporting || isResetting}>
+              {isImporting ? 'Running import…' : 'Run sample import'}
+            </button>
+            <button className="secondary-button" type="button" onClick={onResetDemoData} disabled={isImporting || isResetting}>
+              {isResetting ? 'Resetting…' : 'Reset demo data'}
+            </button>
+          </div>
           <p>Posts mixed valid and invalid time entries to the API.</p>
         </div>
       </header>
@@ -61,10 +74,26 @@ export function Dashboard({
             {importResult.message} {importResult.correlationId ? <span>Correlation: {importResult.correlationId}</span> : null}
           </p>
         ) : null}
+        {resetResult ? <p className="success-message">{resetResult.message}</p> : null}
         {importError ? <p className="error-message" role="alert">{importError}</p> : null}
+        {resetError ? <p className="error-message" role="alert">{resetError}</p> : null}
       </div>
 
       <KpiSummary summary={data.summary} />
+
+      <details className="proof-panel" open>
+        <summary>
+          <span>What this proves</span>
+          <small>Business signal to production path</small>
+        </summary>
+        <div className="proof-grid">
+          <p><strong>Business signal</strong> Health bands translate budget, schedule, and risk into one prioritization view.</p>
+          <p><strong>Integration validation</strong> The import accepts usable rows and rejects bad references, hours, and dates at the API boundary.</p>
+          <p><strong>Exception management</strong> Failed rows remain visible as actionable integration errors instead of disappearing into logs.</p>
+          <p><strong>Traceability</strong> Accepted imports and batch outcomes create audit entries for reviewer confidence.</p>
+          <p><strong>Production next steps</strong> Add auth/RBAC, real ERP connectors, monitoring, and deployment controls.</p>
+        </div>
+      </details>
 
       <div className="dashboard-grid">
         <ProjectHealthTable projects={data.projects} />
