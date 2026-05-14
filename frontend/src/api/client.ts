@@ -38,43 +38,46 @@ class ApiError extends Error {
 
 const sampleImportPayload = {
   sourceSystem: 'ManualImport',
-  importedAtUtc: new Date('2026-05-13T00:00:00Z').toISOString(),
   records: [
     {
-      employeeId: 'E-1042',
-      employeeName: 'Avery Johnson',
-      projectNumber: 'AEC-2026-014',
+      projectNumber: 'AEC-2026-001',
+      employeeNumber: 'EMP-1001',
       workDate: '2026-05-11',
       hours: 7.5,
-      costCode: '01-310.ProjectManagement',
-      externalReference: 'sample-valid-001'
+      externalReference: 'sample-valid-001',
+      description: 'Project controls coordination'
     },
     {
-      employeeId: 'E-1188',
-      employeeName: 'Noah Chen',
-      projectNumber: 'AEC-2026-021',
-      workDate: '2026-05-11',
-      hours: 9,
-      costCode: '03-410.Concrete',
-      externalReference: 'sample-valid-002'
-    },
-    {
-      employeeId: 'E-1501',
-      employeeName: 'Sam Rivera',
-      projectNumber: '',
+      projectNumber: 'AEC-2026-002',
+      employeeNumber: 'EMP-1002',
       workDate: '2026-05-11',
       hours: 6,
-      costCode: '05-200.StructuralSteel',
-      externalReference: 'sample-invalid-missing-project'
+      externalReference: 'sample-valid-002',
+      description: 'Field progress verification'
     },
     {
-      employeeId: 'E-1660',
-      employeeName: 'Morgan Ellis',
-      projectNumber: 'AEC-2026-015',
+      projectNumber: 'AEC-2026-003',
+      employeeNumber: 'EMP-1003',
       workDate: '2026-05-11',
       hours: -2,
-      costCode: '09-900.Finishes',
-      externalReference: 'sample-invalid-negative-hours'
+      externalReference: 'sample-invalid-negative-hours',
+      description: 'Invalid sample: negative hours should be rejected'
+    },
+    {
+      projectNumber: 'AEC-2026-004',
+      employeeNumber: 'EMP-1004',
+      workDate: '',
+      hours: 4,
+      externalReference: 'sample-invalid-missing-date',
+      description: 'Invalid sample: missing work date should be rejected'
+    },
+    {
+      projectNumber: 'AEC-2026-005',
+      employeeNumber: 'EMP-1005',
+      workDate: '2026-05-11',
+      hours: 25,
+      externalReference: 'sample-invalid-excess-hours',
+      description: 'Invalid sample: daily hours exceed the accepted range'
     }
   ]
 };
@@ -189,9 +192,25 @@ function normalizeProjectHealthResponse(raw: unknown): { projects: ProjectHealth
 
 function normalizeProject(raw: unknown, index: number): ProjectHealth {
   const record = asRecord(raw) ?? {};
-  const id = readString(record, ['id', 'projectId']) || `project-${index + 1}`;
+  const id = readString(record, ['projectId', 'id']) || `project-${index + 1}`;
   const contractValue = readNumber(record, ['contractValue', 'contractAmount']);
-  const budgetVariancePercent = readNumber(record, ['budgetVariancePercent', 'budgetVariance']);
+  const estimatedCostAtCompletion = readOptionalNumber(record, ['estimatedCostAtCompletion', 'forecastCostAtCompletion']);
+  const budgetUtilizationPercent = readOptionalNumber(record, ['budgetUtilizationPercent']);
+  const budgetVariancePercent = deriveBudgetVariancePercent({
+    explicitVariance: readOptionalNumber(record, ['budgetVariancePercent', 'budgetVariance']),
+    budgetUtilizationPercent,
+    estimatedCostAtCompletion,
+    contractValue
+  });
+  const riskStatus = readString(record, ['riskStatus']);
+  const explicitRiskCount = readOptionalNumber(record, ['riskCount', 'openRiskCount']);
+  const explicitCriticalRiskCount = readOptionalNumber(record, ['criticalRiskCount']);
+  const riskCounts = deriveRiskCounts({
+    riskStatus,
+    riskCount: explicitRiskCount,
+    criticalRiskCount: explicitCriticalRiskCount
+  });
+  const integrationFailureCount = readOptionalNumber(record, ['integrationFailureCount', 'recentIntegrationFailures']);
 
   return {
     id,
@@ -207,11 +226,61 @@ function normalizeProject(raw: unknown, index: number): ProjectHealth {
     healthStatus: normalizeHealthStatus(readString(record, ['healthStatus', 'statusBand', 'health']) || 'Watch'),
     budgetVariancePercent,
     scheduleVarianceDays: readNumber(record, ['scheduleVarianceDays', 'scheduleVariance']),
-    riskCount: readNumber(record, ['riskCount', 'openRiskCount']),
-    criticalRiskCount: readNumber(record, ['criticalRiskCount']),
-    integrationFailureCount: readNumber(record, ['integrationFailureCount', 'recentIntegrationFailures']),
+    riskStatus: riskStatus || undefined,
+    riskCount: riskCounts.riskCount,
+    criticalRiskCount: riskCounts.criticalRiskCount,
+    hasExplicitRiskCounts: explicitRiskCount !== undefined || explicitCriticalRiskCount !== undefined,
+    integrationFailureCount,
     lastUpdatedUtc: readString(record, ['lastUpdatedUtc', 'calculatedAtUtc', 'updatedAtUtc']) || new Date(0).toISOString()
   };
+}
+
+function deriveBudgetVariancePercent({
+  explicitVariance,
+  budgetUtilizationPercent,
+  estimatedCostAtCompletion,
+  contractValue
+}: {
+  explicitVariance?: number;
+  budgetUtilizationPercent?: number;
+  estimatedCostAtCompletion?: number;
+  contractValue: number;
+}): number {
+  if (explicitVariance !== undefined) return explicitVariance;
+  if (budgetUtilizationPercent !== undefined) return budgetUtilizationPercent - 100;
+  if (estimatedCostAtCompletion !== undefined && contractValue > 0) {
+    return (estimatedCostAtCompletion / contractValue) * 100 - 100;
+  }
+
+  return 0;
+}
+
+function deriveRiskCounts({
+  riskStatus,
+  riskCount,
+  criticalRiskCount
+}: {
+  riskStatus: string;
+  riskCount?: number;
+  criticalRiskCount?: number;
+}): { riskCount: number; criticalRiskCount: number } {
+  if (riskCount !== undefined || criticalRiskCount !== undefined) {
+    return {
+      riskCount: riskCount ?? criticalRiskCount ?? 0,
+      criticalRiskCount: criticalRiskCount ?? 0
+    };
+  }
+
+  const key = riskStatus.toLowerCase().replace(/[\s_-]/g, '');
+  if (!key || key === 'none' || key === 'low' || key === 'healthy' || key === 'green') {
+    return { riskCount: 0, criticalRiskCount: 0 };
+  }
+
+  if (key === 'critical' || key === 'red') {
+    return { riskCount: 1, criticalRiskCount: 1 };
+  }
+
+  return { riskCount: 1, criticalRiskCount: 0 };
 }
 
 function normalizeSummary(record: Record<string, unknown>, projects: ProjectHealth[]): DashboardSummary {
@@ -233,20 +302,39 @@ function normalizeSummary(record: Record<string, unknown>, projects: ProjectHeal
 function normalizeIntegrationErrors(raw: unknown): IntegrationError[] {
   return readArrayPayload(raw, ['items', 'errors', 'integrationErrors', 'data']).map((item, index) => {
     const record = asRecord(item) ?? {};
+    const projectNumber = readString(record, ['projectNumber']);
+    const employeeNumber = readString(record, ['employeeNumber']);
+    const message = readString(record, ['message']);
+    const details = readString(record, ['details', 'detail']);
+    const messageDetails = formatMessageDetails(message, details);
 
     return {
       id: readString(record, ['id']) || `integration-error-${index + 1}`,
       projectId: readString(record, ['projectId']) || undefined,
-      projectName: readString(record, ['projectName', 'project']) || 'Unassigned project',
+      projectName: readString(record, ['projectName', 'project']) || projectNumber || 'Unassigned project',
       sourceSystem: readString(record, ['sourceSystem']) || 'External system',
-      eventType: readString(record, ['eventType', 'type']) || 'Sync',
-      status: normalizeIntegrationStatus(readString(record, ['status']) || 'Failed'),
-      message: readString(record, ['message', 'detail']) || 'Integration failed without additional details.',
+      eventType: readString(record, ['eventType', 'type', 'operation']) || 'Sync',
+      status: normalizeIntegrationStatus(readString(record, ['status', 'severity']) || 'Failed'),
+      message: formatIntegrationErrorMessage(messageDetails, projectNumber, employeeNumber),
       externalReference: readString(record, ['externalReference', 'reference']) || 'not provided',
       occurredAtUtc: readString(record, ['occurredAtUtc', 'createdAtUtc', 'timestampUtc']) || new Date(0).toISOString(),
       durationMs: readNumber(record, ['durationMs'])
     };
   });
+}
+
+function formatMessageDetails(message: string, details: string): string {
+  if (message && details && message !== details) return `${message} Details: ${details}`;
+  return message || details || 'Integration event reported without additional details.';
+}
+
+function formatIntegrationErrorMessage(details: string, projectNumber: string, employeeNumber: string): string {
+  const context = [
+    projectNumber ? `Project ${projectNumber}` : '',
+    employeeNumber ? `Employee ${employeeNumber}` : ''
+  ].filter(Boolean);
+
+  return context.length > 0 ? `${context.join(' · ')} — ${details}` : details;
 }
 
 function normalizeAuditLogs(raw: unknown): AuditLogEntry[] {
@@ -302,16 +390,16 @@ function summarizeProjects(projects: ProjectHealth[], integrationErrors: Integra
 
 function normalizeHealthStatus(value: string): HealthStatus {
   const key = value.toLowerCase().replace(/[\s_-]/g, '');
-  if (key === 'healthy') return 'Healthy';
-  if (key === 'critical') return 'Critical';
-  if (key === 'atrisk') return 'AtRisk';
+  if (key === 'healthy' || key === 'green') return 'Healthy';
+  if (key === 'critical' || key === 'red') return 'Critical';
+  if (key === 'atrisk' || key === 'orange') return 'AtRisk';
   return 'Watch';
 }
 
 function normalizeIntegrationStatus(value: string): IntegrationError['status'] {
-  const key = value.toLowerCase();
-  if (key === 'succeeded' || key === 'success') return 'Succeeded';
-  if (key === 'partial') return 'Partial';
+  const key = value.toLowerCase().replace(/[\s_-]/g, '');
+  if (key === 'succeeded' || key === 'success' || key === 'info' || key === 'informational') return 'Succeeded';
+  if (key === 'partial' || key === 'warning' || key === 'warn') return 'Partial';
   return 'Failed';
 }
 
@@ -350,6 +438,19 @@ function readNumber(record: Record<string, unknown>, keys: string[]): number {
   }
 
   return 0;
+}
+
+function readOptionalNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  return undefined;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

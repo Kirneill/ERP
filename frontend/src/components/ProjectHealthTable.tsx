@@ -53,8 +53,8 @@ export function ProjectHealthTable({ projects }: ProjectHealthTableProps) {
                 <td className="number-cell">{project.healthScore}</td>
                 <td className="number-cell">{formatPercent(project.budgetVariancePercent)}</td>
                 <td>{formatDays(project.scheduleVarianceDays)}</td>
-                <td>{project.criticalRiskCount > 0 ? `${project.criticalRiskCount} critical / ${project.riskCount} open` : `${project.riskCount} open`}</td>
-                <td className="number-cell">{project.integrationFailureCount}</td>
+                <td>{formatRiskCell(project)}</td>
+                <td className="number-cell">{project.integrationFailureCount ?? '—'}</td>
                 <td>
                   <span className="progress-label">{project.percentComplete}%</span>
                   <span className="progress-track" aria-hidden="true">
@@ -73,4 +73,19 @@ export function ProjectHealthTable({ projects }: ProjectHealthTableProps) {
       </div>
     </section>
   );
+}
+
+function formatRiskCell(project: ProjectHealth): string {
+  if (!project.hasExplicitRiskCounts && project.riskStatus) {
+    return `${formatRiskStatus(project.riskStatus)} status`;
+  }
+
+  return project.criticalRiskCount > 0
+    ? `${project.criticalRiskCount} critical / ${project.riskCount} open`
+    : `${project.riskCount} open`;
+}
+
+function formatRiskStatus(value: string): string {
+  const normalized = value.toLowerCase();
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }

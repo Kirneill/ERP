@@ -39,7 +39,7 @@ export function AtRiskPanel({ projects }: { projects: ProjectHealth[] }) {
                 </div>
                 <div>
                   <dt>Risks</dt>
-                  <dd>{project.criticalRiskCount} critical</dd>
+                  <dd>{formatRiskSummary(project)}</dd>
                 </div>
               </dl>
             </li>
@@ -48,4 +48,13 @@ export function AtRiskPanel({ projects }: { projects: ProjectHealth[] }) {
       )}
     </section>
   );
+}
+
+function formatRiskSummary(project: ProjectHealth): string {
+  if (!project.hasExplicitRiskCounts && project.riskStatus) {
+    const normalized = project.riskStatus.toLowerCase();
+    return `${normalized.charAt(0).toUpperCase() + normalized.slice(1)} status`;
+  }
+
+  return `${project.criticalRiskCount} critical`;
 }

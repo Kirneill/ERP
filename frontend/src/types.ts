@@ -14,9 +14,11 @@ export interface ProjectHealth {
   healthStatus: HealthStatus;
   budgetVariancePercent: number;
   scheduleVarianceDays: number;
+  riskStatus?: string;
   riskCount: number;
   criticalRiskCount: number;
-  integrationFailureCount: number;
+  hasExplicitRiskCounts?: boolean;
+  integrationFailureCount?: number;
   lastUpdatedUtc: string;
 }
 

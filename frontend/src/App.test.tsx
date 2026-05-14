@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { buildMockDashboardData } from './api/mockData';
@@ -35,5 +36,16 @@ describe('App', () => {
 
     expect(await screen.findByText(/demo\/offline mode/i)).toBeInTheDocument();
     expect(screen.getByText(/network request failed/i)).toBeInTheDocument();
+  });
+
+  it('runs the sample import and shows success feedback', async () => {
+    const user = userEvent.setup();
+    const client = createReadyClient();
+    render(<App client={client} />);
+
+    await user.click(await screen.findByRole('button', { name: /run sample import/i }));
+
+    expect(client.runSampleImport).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/import complete: 2 accepted, 2 rejected/i)).toBeInTheDocument();
   });
 });
