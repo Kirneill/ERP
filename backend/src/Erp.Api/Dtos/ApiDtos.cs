@@ -25,7 +25,7 @@ public sealed record ProjectHealthDto(
 
 public sealed record TimeEntryImportRequest(
     string? SourceSystem,
-    IReadOnlyList<TimeEntryImportRecord>? Records);
+    IReadOnlyList<TimeEntryImportRecord?>? Records);
 
 public sealed record TimeEntryImportRecord(
     string? ProjectNumber,

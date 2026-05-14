@@ -42,7 +42,12 @@ public sealed class TimeEntryImportService(ErpDbContext db, ILogger<TimeEntryImp
         {
             var rowNumber = index + 1;
             var record = records[index];
-            var validationError = Validate(record, rowNumber, projects, employees, existingReferences, seenReferences, out var project, out var employee, out var workDate);
+            Project project = null!;
+            Employee employee = null!;
+            var workDate = default(DateTime);
+            var validationError = record is null
+                ? Error(rowNumber, null, "InvalidRecord", "Import record is required.")
+                : Validate(record, rowNumber, projects, employees, existingReferences, seenReferences, out project, out employee, out workDate);
 
             if (validationError is not null)
             {
@@ -53,9 +58,9 @@ public sealed class TimeEntryImportService(ErpDbContext db, ILogger<TimeEntryImp
                     Operation = "TimeEntryImport",
                     Severity = "Warning",
                     Message = validationError.Message,
-                    ExternalReference = record.ExternalReference,
-                    ProjectNumber = record.ProjectNumber,
-                    EmployeeNumber = record.EmployeeNumber,
+                    ExternalReference = record?.ExternalReference,
+                    ProjectNumber = record?.ProjectNumber,
+                    EmployeeNumber = record?.EmployeeNumber,
                     OccurredAtUtc = DateTime.UtcNow,
                     Details = $"Row {rowNumber}: {validationError.Code}"
                 });
@@ -69,14 +74,17 @@ public sealed class TimeEntryImportService(ErpDbContext db, ILogger<TimeEntryImp
                 continue;
             }
 
+            var acceptedRecord = record ?? throw new InvalidOperationException("Validated import record cannot be null.");
+            var externalReference = acceptedRecord.ExternalReference!.Trim();
+
             db.TimeEntries.Add(new TimeEntry
             {
                 ProjectId = project.Id,
                 EmployeeId = employee.Id,
                 WorkDate = workDate,
-                Hours = record.Hours,
-                ExternalReference = record.ExternalReference!.Trim(),
-                Description = record.Description,
+                Hours = acceptedRecord.Hours,
+                ExternalReference = externalReference,
+                Description = acceptedRecord.Description,
                 ImportBatchId = batch.Id,
                 CreatedAtUtc = DateTime.UtcNow
             });
@@ -84,10 +92,10 @@ public sealed class TimeEntryImportService(ErpDbContext db, ILogger<TimeEntryImp
             db.AuditLogs.Add(new AuditLog
             {
                 EntityType = "TimeEntry",
-                EntityId = record.ExternalReference!.Trim(),
+                EntityId = externalReference,
                 Action = "Imported",
                 Actor = sourceSystem,
-                Message = $"Imported {record.Hours} hours for {employee.EmployeeNumber} on {project.ProjectNumber}.",
+                Message = $"Imported {acceptedRecord.Hours} hours for {employee.EmployeeNumber} on {project.ProjectNumber}.",
                 OccurredAtUtc = DateTime.UtcNow,
                 Details = $"Batch {batch.Id}, work date {workDate:yyyy-MM-dd}"
             });

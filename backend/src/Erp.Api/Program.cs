@@ -47,6 +47,14 @@ app.Use(async (context, next) =>
         {
             await next();
         }
+        catch (BadHttpRequestException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new ApiErrorDto(
+                "InvalidRequest",
+                exception.Message,
+                traceId));
+        }
         finally
         {
             stopwatch.Stop();
